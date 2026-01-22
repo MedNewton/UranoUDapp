@@ -377,7 +377,7 @@ const UStation = () => {
   );
 
   return (
-    <main className="pt-32">
+    <main className="pt-32 min-h-screen">
       <div className="container mx-auto p-8">
         {showForm ? <ApplicationForm /> : <IntroPage />}
       </div>

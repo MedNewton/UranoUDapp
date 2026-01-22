@@ -68,7 +68,7 @@ const GovernanceDetail = () => {
   };
 
   return (
-    <main className="pt-24">
+    <main className="pt-24 min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Breadcrumb */}
         <div className="mb-6">

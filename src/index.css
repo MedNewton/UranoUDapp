@@ -12,6 +12,7 @@
 /* Solo le regole base essenziali */
 body {
   font-family: 'Poppins', sans-serif;
+  overflow-x: hidden !important;
 }
 
 /* Rimuoviamo la regola per h1, h2, ecc */

@@ -220,7 +220,7 @@ Key financial indicators:
 
   return (
     <>
-      <div className="container mx-auto px-4 py-8 pt-24">
+      <div className="container mx-auto px-4 py-8 pt-24 min-h-screen">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Box sinistro fisso */}
           <div className="lg:w-1/3 lg:sticky lg:top-24 lg:self-start">

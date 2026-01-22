@@ -83,7 +83,7 @@ const Governance = () => {
   };
 
   return (
-    <main className="pt-24">
+    <main className="pt-24 min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header con titolo e statistiche */}

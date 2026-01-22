@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import DashboardBox from '@/components/ui/DashboardBox';
 import StarryBackground from '@/components/ui/StarryBackground';
 import sfondoLight from '@/assets/img/bglight.png';
@@ -70,7 +71,7 @@ function App() {
   ];
 
   const HomePage = () => (
-    <main className="pt-24">
+    <main className="pt-24 min-h-screen">
       <div className="container mx-auto px-4 py-8">
         {/* Box originali */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto mb-12">
@@ -86,15 +87,15 @@ function App() {
                           TTV
                         </h2>
                         <div className="relative inline-block">
-                          <div className={`w-5 h-5 rounded-full border ${isDark ? 'border-gray-500' : 'border-gray-400'} flex items-center justify-center cursor-help hover:border-[#2dbdc5] transition-colors`} 
-                               onMouseEnter={(e) => {
-                                 const tooltip = e.currentTarget.nextElementSibling;
-                                 if (tooltip) tooltip.classList.remove('opacity-0');
-                               }}
-                               onMouseLeave={(e) => {
-                                 const tooltip = e.currentTarget.nextElementSibling;
-                                 if (tooltip) tooltip.classList.add('opacity-0');
-                               }}>
+                          <div className={`w-5 h-5 rounded-full border ${isDark ? 'border-gray-500' : 'border-gray-400'} flex items-center justify-center cursor-help hover:border-[#2dbdc5] transition-colors`}
+                            onMouseEnter={(e) => {
+                              const tooltip = e.currentTarget.nextElementSibling;
+                              if (tooltip) tooltip.classList.remove('opacity-0');
+                            }}
+                            onMouseLeave={(e) => {
+                              const tooltip = e.currentTarget.nextElementSibling;
+                              if (tooltip) tooltip.classList.add('opacity-0');
+                            }}>
                             <span className={`text-xs font-semibold ${subTextColor}`}>i</span>
                           </div>
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -translate-y-2 bg-gray-900 text-white text-xs rounded py-1 px-2 opacity-0 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10">
@@ -117,13 +118,13 @@ function App() {
                   <Link to="/portfolio" className="w-full">
                     <div className="flex items-center justify-between h-24 hover:text-[#2dbdc5] transition-colors overflow-visible relative">
                       <h2 className={`text-2xl font-conthrax ${subTextColor}`}>
-                      My Portfolio
+                        My Portfolio
                       </h2>
-                      <img 
-                        src={astronautaImg} 
-                        alt="Astronauta" 
-                        className="w-auto absolute right-4 top-1" 
-                        style={{ 
+                      <img
+                        src={astronautaImg}
+                        alt="Astronauta"
+                        className="w-auto absolute right-4 top-1"
+                        style={{
                           height: '160%',
                           objectFit: 'cover',
                           objectPosition: 'top right',
@@ -146,7 +147,7 @@ function App() {
         }}>
           {poolData.map((pool) => (
             <Link to={`/pool/${pool.id}`} key={pool.id}>
-              <DashboardBox 
+              <DashboardBox
                 className="p-6 hover:border-[#2dbdc5] transition-colors duration-200 mt-6"
               >
                 <div className="flex items-center gap-8">
@@ -155,9 +156,9 @@ function App() {
                     <h3 className={`text-sm ${subTextColor} mb-4 font-conthrax`}>Company</h3>
                     <div className="flex gap-4">
                       <div className="flex-shrink-0">
-                        <img 
-                          src={pool.logo} 
-                          alt="Company Logo" 
+                        <img
+                          src={pool.logo}
+                          alt="Company Logo"
                           className="h-16 w-auto"
                         />
                       </div>
@@ -213,25 +214,26 @@ function App() {
       <PortfolioProvider>
         <Router>
           <div className={`min-h-screen ${bgColor} relative`}>
-          {isDark ? <StarryBackground /> : (
-            <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
-              <img src={sfondoLight} alt="Light background" className="w-full h-full object-cover" />
+            {isDark ? <StarryBackground /> : (
+              <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
+                <img src={sfondoLight} alt="Light background" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="relative z-10"> {/* Wrapper per il contenuto */}
+              <Header />
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/pool/:poolId" element={<Pool />} />
+                <Route path="/stake" element={<Stake />} />
+                <Route path="/portfolio" element={<Portfolio />} />
+                <Route path="/governance" element={<Governance />} />
+                <Route path="/governance/create" element={<CreateProposal />} />
+                <Route path="/governance/:proposalId" element={<GovernanceDetail />} />
+                <Route path="/ustation" element={<UStation />} />
+              </Routes>
+              <Footer />
             </div>
-          )}
-          <div className="relative z-10"> {/* Wrapper per il contenuto */}
-            <Header />
-            <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/pool/:poolId" element={<Pool />} />
-            <Route path="/stake" element={<Stake />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/governance" element={<Governance />} />
-            <Route path="/governance/create" element={<CreateProposal />} />
-            <Route path="/governance/:proposalId" element={<GovernanceDetail />} />
-            <Route path="/ustation" element={<UStation />} />
-          </Routes>
-        </div>
-        </div>
+          </div>
         </Router>
       </PortfolioProvider>
     </WalletProvider>

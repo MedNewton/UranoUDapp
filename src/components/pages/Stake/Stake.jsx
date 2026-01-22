@@ -93,7 +93,7 @@ const Stake = () => {
   };
 
   return (
-    <main className="pt-24">
+    <main className="pt-24 min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Titolo Stake */}
         <div className="flex items-center gap-1 mb-8">
