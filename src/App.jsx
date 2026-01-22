@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/layout/Header';
 import DashboardBox from './components/ui/DashboardBox';
 import StarryBackground from './components/ui/StarryBackground';
-import sfondoLight from './assets/img/sfondo_light.png';
+import sfondoLight from './assets/img/bglight.png';
 import Pool from './components/pages/Pool/Pool';
 import { useTheme } from './context/ThemeContext';
 import { WalletProvider } from './context/WalletContext';
