@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThirdwebProvider } from "thirdweb/react";
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import DashboardBox from '@/components/ui/DashboardBox';
@@ -210,33 +211,35 @@ function App() {
   );
 
   return (
-    <WalletProvider>
-      <PortfolioProvider>
-        <Router>
-          <div className={`min-h-screen ${bgColor} relative`}>
-            {isDark ? <StarryBackground /> : (
-              <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
-                <img src={sfondoLight} alt="Light background" className="w-full h-full object-cover" />
+    <ThirdwebProvider>
+      <WalletProvider>
+        <PortfolioProvider>
+          <Router>
+            <div className={`min-h-screen ${bgColor} relative`}>
+              {isDark ? <StarryBackground /> : (
+                <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
+                  <img src={sfondoLight} alt="Light background" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="relative z-10">
+                <Header />
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/pool/:poolId" element={<Pool />} />
+                  <Route path="/stake" element={<Stake />} />
+                  <Route path="/portfolio" element={<Portfolio />} />
+                  <Route path="/governance" element={<Governance />} />
+                  <Route path="/governance/create" element={<CreateProposal />} />
+                  <Route path="/governance/:proposalId" element={<GovernanceDetail />} />
+                  <Route path="/ustation" element={<UStation />} />
+                </Routes>
+                <Footer />
               </div>
-            )}
-            <div className="relative z-10"> {/* Wrapper per il contenuto */}
-              <Header />
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/pool/:poolId" element={<Pool />} />
-                <Route path="/stake" element={<Stake />} />
-                <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/governance" element={<Governance />} />
-                <Route path="/governance/create" element={<CreateProposal />} />
-                <Route path="/governance/:proposalId" element={<GovernanceDetail />} />
-                <Route path="/ustation" element={<UStation />} />
-              </Routes>
-              <Footer />
             </div>
-          </div>
-        </Router>
-      </PortfolioProvider>
-    </WalletProvider>
+          </Router>
+        </PortfolioProvider>
+      </WalletProvider>
+    </ThirdwebProvider>
   );
 }
 

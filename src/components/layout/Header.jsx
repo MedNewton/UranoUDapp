@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ConnectButton } from "thirdweb/react";
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
+import { client, chain } from '@/lib/thirdweb';
 import logoUrano from '@/assets/img/logo_urano.png';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { isDark, toggleTheme } = useTheme();
-  const { isConnected, walletAddress, toggleWalletConnection } = useWallet();
+  const { isConnected, displayAddress } = useWallet();
 
   const menuItems = [
     { name: 'Home', path: '/' },
@@ -18,17 +20,20 @@ const Header = () => {
     { name: 'Docs', path: 'https://docs.uranoecosystem.com', external: true },
   ];
 
+  // Custom theme for ConnectButton
+  const connectButtonTheme = isDark ? "dark" : "light";
+
   return (
     <header className={`
       fixed w-full top-0 z-50
-      ${isDark 
+      ${isDark
         ? 'bg-black/50 border-gray-800'
         : 'bg-white/80 border-gray-200/50'
       }
       backdrop-blur-md border-b
       transition-colors duration-200
     `}>
-      <div className="w-full px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 py-2 sm:px-6 lg:px-8">
         <div className="flex items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
@@ -51,10 +56,10 @@ const Header = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`
-                    px-4 py-2 rounded-lg 
+                    px-4 py-2 rounded-lg
                     text-base font-conthrax
-                    transition-colors duration-200 
-                    hover:bg-[#2dbdc5] hover:text-white 
+                    transition-colors duration-200
+                    hover:bg-[#2dbdc5] hover:text-white
                     ${isDark ? 'text-gray-200' : 'text-gray-700'}
                   `}
                 >
@@ -65,10 +70,10 @@ const Header = () => {
                   key={item.name}
                   to={item.path}
                   className={`
-                    px-4 py-2 rounded-lg 
+                    px-4 py-2 rounded-lg
                     text-base font-conthrax
-                    transition-colors duration-200 
-                    hover:bg-[#2dbdc5] hover:text-white 
+                    transition-colors duration-200
+                    hover:bg-[#2dbdc5] hover:text-white
                     ${isDark ? 'text-gray-200' : 'text-gray-700'}
                   `}
                 >
@@ -96,20 +101,24 @@ const Header = () => {
               )}
             </button>
 
-            {/* Wallet Button */}
-            <button
-              onClick={toggleWalletConnection}
-              className={`
-                px-4 py-2 rounded-lg 
-                text-base font-conthrax
-                transition-colors
-                ${isConnected 
-                  ? 'bg-gray-800 text-[#2dbdc5] hover:bg-gray-700' 
-                  : 'bg-[#2dbdc5] text-white hover:bg-[#25a4ab]'
-                }
-              `}>
-              {isConnected ? `${walletAddress}` : 'Connect Wallet'}
-            </button>
+            {/* Wallet Connect Button */}
+            <ConnectButton
+              client={client}
+              chain={chain}
+              theme={connectButtonTheme}
+              connectButton={{
+                label: "Connect Wallet",
+                className: "!px-4 !py-2 !rounded-lg !text-base !font-conthrax !transition-colors !bg-[#2dbdc5] !text-white hover:!bg-[#25a4ab]",
+              }}
+              detailsButton={{
+                className: "!px-4 !py-2 !rounded-lg !text-base !font-conthrax !transition-colors !bg-gray-800 !text-[#2dbdc5] hover:!bg-gray-700",
+              }}
+              connectModal={{
+                size: "compact",
+                title: "Connect to Urano",
+                showThirdwebBranding: false,
+              }}
+            />
           </div>
 
           {/* Mobile Menu Button */}
@@ -155,8 +164,8 @@ const Header = () => {
       <div className={`md:hidden ${isOpen ? 'block' : 'hidden'}`}>
         <div className={`
           px-2 pt-2 pb-3 space-y-1
-          ${isDark 
-            ? 'bg-black/80' 
+          ${isDark
+            ? 'bg-black/80'
             : 'bg-white/80'
           }
           backdrop-blur-md border-b border-gray-200/50
@@ -166,10 +175,10 @@ const Header = () => {
               key={item.name}
               to={item.path}
               className={`
-                block px-4 py-2 rounded-lg 
+                block px-4 py-2 rounded-lg
                 text-lg font-conthrax
-                transition-colors duration-200 
-                hover:bg-[#2dbdc5] hover:text-white 
+                transition-colors duration-200
+                hover:bg-[#2dbdc5] hover:text-white
                 ${isDark ? 'text-gray-200' : 'text-gray-700'}
               `}
               onClick={() => setIsOpen(false)}
@@ -178,23 +187,25 @@ const Header = () => {
             </Link>
           ))}
           {/* Wallet Button - Mobile */}
-          <button
-            onClick={() => {
-              toggleWalletConnection();
-              setIsOpen(false);
-            }}
-            className={`
-              w-full
-              px-4 py-2 rounded-lg 
-              text-lg font-conthrax
-              transition-colors
-              ${isConnected 
-                ? 'bg-gray-800 text-[#2dbdc5] hover:bg-gray-700' 
-                : 'bg-[#2dbdc5] text-white hover:bg-[#25a4ab]'
-              }
-            `}>
-            {isConnected ? `${walletAddress}` : 'Connect Wallet'}
-          </button>
+          <div className="px-2 pt-2">
+            <ConnectButton
+              client={client}
+              chain={chain}
+              theme={connectButtonTheme}
+              connectButton={{
+                label: "Connect Wallet",
+                className: "!w-full !px-4 !py-2 !rounded-lg !text-lg !font-conthrax !transition-colors !bg-[#2dbdc5] !text-white hover:!bg-[#25a4ab]",
+              }}
+              detailsButton={{
+                className: "!w-full !px-4 !py-2 !rounded-lg !text-lg !font-conthrax !transition-colors !bg-gray-800 !text-[#2dbdc5] hover:!bg-gray-700",
+              }}
+              connectModal={{
+                size: "compact",
+                title: "Connect to Urano",
+                showThirdwebBranding: false,
+              }}
+            />
+          </div>
         </div>
       </div>
     </header>

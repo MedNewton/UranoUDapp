@@ -1,86 +1,100 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useActiveAccount, useActiveWallet, useDisconnect } from "thirdweb/react";
+import { client } from '@/lib/thirdweb';
 
-// Creazione del contesto
+// Create the context
 const WalletContext = createContext();
 
-// Custom hook per usare il contesto
+// Custom hook to use the context
 export const useWallet = () => useContext(WalletContext);
 
-// Provider del contesto
+// Provider component
 export const WalletProvider = ({ children }) => {
-  // Stato per tracciare se il wallet è connesso
-  const [isConnected, setIsConnected] = useState(false);
-  // Simula l'indirizzo del wallet
-  const [walletAddress, setWalletAddress] = useState('');
-  // Simula il saldo del wallet
+  // Get active account and wallet from thirdweb
+  const activeAccount = useActiveAccount();
+  const activeWallet = useActiveWallet();
+  const { disconnect } = useDisconnect();
+
+  // Derived state
+  const isConnected = !!activeAccount;
+  const walletAddress = activeAccount?.address || '';
+
+  // Format address for display (0x1234...5678)
+  const formatAddress = (address) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const displayAddress = formatAddress(walletAddress);
+
+  // Balance state (can be fetched separately if needed)
   const [balance, setBalance] = useState({
     urano: '0',
     eth: '0'
   });
-  // Flag per tener traccia se la modale KYC è già stata mostrata
+
+  // KYC modal state
   const [kycModalShown, setKycModalShown] = useState(false);
 
-  // Funzione per simulare la connessione/disconnessione del wallet
-  const toggleWalletConnection = () => {
-    if (isConnected) {
-      // Disconnette il wallet
-      setIsConnected(false);
-      setWalletAddress('');
-      setBalance({ urano: '0', eth: '0' });
-      // Salva lo stato in localStorage per persistenza
-      localStorage.removeItem('urano_wallet_connected');
-      localStorage.removeItem('urano_wallet_address');
-    } else {
-      // Simula la connessione di un wallet con un indirizzo di esempio
-      const randomAddr = `0x${Math.random().toString(16).substring(2, 8)}...${Math.random().toString(16).substring(2, 6)}`;
-      setIsConnected(true);
-      setWalletAddress(randomAddr);
-      // Simula dei saldi casuali
-      setBalance({
-        urano: (Math.random() * 500).toFixed(2),
-        eth: (Math.random() * 5).toFixed(4)
-      });
-      // Salva lo stato in localStorage per persistenza
-      localStorage.setItem('urano_wallet_connected', 'true');
-      localStorage.setItem('urano_wallet_address', randomAddr);
+  // State for controlling connect modal
+  const [showConnectModal, setShowConnectModal] = useState(false);
+
+  // Function to open connect modal
+  const openConnectModal = () => {
+    setShowConnectModal(true);
+  };
+
+  // Function to close connect modal
+  const closeConnectModal = () => {
+    setShowConnectModal(false);
+  };
+
+  // Function to disconnect wallet
+  const disconnectWallet = () => {
+    if (activeWallet) {
+      disconnect(activeWallet);
     }
   };
 
-  // Controlla se il wallet era già connesso e recupera altri stati (persistenza dello stato)
+  // Toggle function for compatibility with existing code
+  const toggleWalletConnection = () => {
+    if (isConnected) {
+      disconnectWallet();
+    } else {
+      openConnectModal();
+    }
+  };
+
+  // Check KYC modal shown state on mount
   useEffect(() => {
-    const wasConnected = localStorage.getItem('urano_wallet_connected') === 'true';
-    const savedAddress = localStorage.getItem('urano_wallet_address');
     const kyc_shown = localStorage.getItem('urano_kyc_shown') === 'true';
-    
     if (kyc_shown) {
       setKycModalShown(true);
     }
-    
-    if (wasConnected && savedAddress) {
-      setIsConnected(true);
-      setWalletAddress(savedAddress);
-      // Simula dei saldi casuali ma persistenti
-      setBalance({
-        urano: (Math.random() * 500).toFixed(2),
-        eth: (Math.random() * 5).toFixed(4)
-      });
-    }
   }, []);
 
-  // Funzione per segnare che la modale KYC è stata mostrata
+  // Function to mark KYC modal as shown
   const setKycShown = () => {
     setKycModalShown(true);
     localStorage.setItem('urano_kyc_shown', 'true');
   };
 
-  // Valori esposti dal contesto
+  // Context value
   const value = {
     isConnected,
     walletAddress,
+    displayAddress,
     balance,
     toggleWalletConnection,
+    disconnectWallet,
+    openConnectModal,
+    closeConnectModal,
+    showConnectModal,
     kycModalShown,
-    setKycShown
+    setKycShown,
+    activeAccount,
+    activeWallet,
+    client
   };
 
   return (
