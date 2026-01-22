@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Conthrax';
+  src: url('./assets/fonts/Conthrax-SemiBold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Solo le regole base essenziali */
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Rimuoviamo la regola per h1, h2, ecc */
+
+/* Solo gli stili essenziali per stelle e glow */
+.starry-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: twinkle var(--twinkle-duration) ease-in-out infinite;
+}
+
+/* Glow radiale semplificato */
+.dark-theme::after {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at center, rgba(45, 189, 197, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Modifichiamo gli stili delle stelle cadenti */
+.shooting-star {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(45deg, rgba(255, 255, 255, 1), transparent);
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+/* Creiamo 4 diverse animazioni per direzioni diverse */
+@keyframes shootRight {
+  0% { transform: translate(0, 0) rotate(-45deg); opacity: 1; }
+  100% { transform: translate(400px, 400px) rotate(-45deg); opacity: 0; }
+}
+
+@keyframes shootLeft {
+  0% { transform: translate(0, 0) rotate(135deg); opacity: 1; }
+  100% { transform: translate(-400px, 400px) rotate(135deg); opacity: 0; }
+}
+
+@keyframes shootUp {
+  0% { transform: translate(0, 0) rotate(-135deg); opacity: 1; }
+  100% { transform: translate(-400px, -400px) rotate(-135deg); opacity: 0; }
+}
+
+@keyframes shootDown {
+  0% { transform: translate(0, 0) rotate(45deg); opacity: 1; }
+  100% { transform: translate(400px, -400px) rotate(45deg); opacity: 0; }
+}
+
+/* Regola temporanea per debug */
+.font-conthrax {
+  font-family: 'Conthrax', sans-serif !important;
+}
