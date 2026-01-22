@@ -4,8 +4,8 @@ import { RiTelegram2Fill } from 'react-icons/ri';
 import { FaXTwitter } from 'react-icons/fa6';
 import { HiOutlineMail } from 'react-icons/hi';
 import { useTheme } from '@/context/ThemeContext';
-import logoUrano from '@/assets/img/logo_urano.png';
-import arb from '@/assets/img/Secondary-OneLine_AllWhite.png'
+import logoUrano from '@/assets/img/logo_urano.webp';
+import arb from '@/assets/img/Secondary-OneLine_AllWhite.webp'
 
 const footerColumns = [
   {

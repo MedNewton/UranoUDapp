@@ -4,7 +4,7 @@ import { ConnectButton } from "thirdweb/react";
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import { client, chain } from '@/lib/thirdweb';
-import logoUrano from '@/assets/img/logo_urano.png';
+import logoUrano from '@/assets/img/logo_urano.webp';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);

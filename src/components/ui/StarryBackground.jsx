@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTheme } from '@/context/ThemeContext';
-import stellato from '@/assets/img/bgdark.png';
+import stellato from '@/assets/img/bgdark.webp';
 
 const StarryBackground = () => {
   const { isDark } = useTheme();

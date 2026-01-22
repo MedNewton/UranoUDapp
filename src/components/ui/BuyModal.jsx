@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import uShareLogo from '@/assets/img/pool_logo.png'; // Usa il logo esistente per uShare
-import usdcLogo from '@/assets/img/usdc_logo.png'; // Dobbiamo creare questa immagine
+import uShareLogo from '@/assets/img/pool_logo.webp'; // Usa il logo esistente per uShare
+import usdcLogo from '@/assets/img/usdc_logo.webp'; // Dobbiamo creare questa immagine
 import { usePortfolio } from '@/context/PortfolioContext';
 
 const BuyModal = ({ isOpen, onClose }) => {
@@ -67,7 +67,7 @@ const BuyModal = ({ isOpen, onClose }) => {
                 className={`text-2xl font-bold bg-transparent text-white border-none focus:outline-none w-full ${inputActive ? 'border-b border-[#2dbdc5]' : ''}`}
               />
               <div className="flex items-center bg-gray-800 px-4 py-2.5 rounded-full min-w-[110px]">
-                <img src={usdcLogo || '/placeholder-usdc.png'} alt="USDC" className="w-7 h-auto object-contain mr-2.5" />
+                <img src={usdcLogo || '/placeholder-usdc.webp'} alt="USDC" className="w-7 h-auto object-contain mr-2.5" />
                 <span className="text-white font-conthrax text-sm">USDC</span>
               </div>
             </div>

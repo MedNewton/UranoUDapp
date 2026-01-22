@@ -5,8 +5,8 @@ import KYCModal from '@/components/ui/KYCModal';
 import BuyModal from '@/components/ui/BuyModal';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
-import logoBono from '@/assets/img/bono_logo.png';
-import logoUrano from '@/assets/img/pool_logo.png';
+import logoBono from '@/assets/img/bono_logo.webp';
+import logoUrano from '@/assets/img/pool_logo.webp';
 
 // Import PDF files
 import presentazioneBook from '@/assets/pdf/presentazione_book.pdf';
