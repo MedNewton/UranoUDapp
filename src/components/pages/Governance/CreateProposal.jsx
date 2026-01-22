@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import DashboardBox from '../../ui/DashboardBox';
-import { useTheme } from '../../../context/ThemeContext';
+import DashboardBox from '@/components/ui/DashboardBox';
+import { useTheme } from '@/context/ThemeContext';
 
 const CreateProposal = () => {
   const navigate = useNavigate();

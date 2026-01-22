@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import uShareLogo from '../../assets/img/pool_logo.png'; // Usa il logo esistente per uShare
-import usdcLogo from '../../assets/img/usdc_logo.png'; // Dobbiamo creare questa immagine
-import { usePortfolio } from '../../context/PortfolioContext';
+import uShareLogo from '@/assets/img/pool_logo.png'; // Usa il logo esistente per uShare
+import usdcLogo from '@/assets/img/usdc_logo.png'; // Dobbiamo creare questa immagine
+import { usePortfolio } from '@/context/PortfolioContext';
 
 const BuyModal = ({ isOpen, onClose }) => {
   const [amount, setAmount] = useState('0.00');

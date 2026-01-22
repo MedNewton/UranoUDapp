@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useTheme } from '../../../context/ThemeContext';
-import DashboardBox from '../../ui/DashboardBox';
+import { useTheme } from '@/context/ThemeContext';
+import DashboardBox from '@/components/ui/DashboardBox';
 
 const GovernanceDetail = () => {
   const { proposalId } = useParams();

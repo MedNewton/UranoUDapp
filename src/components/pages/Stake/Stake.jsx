@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import DashboardBox from '../../ui/DashboardBox';
-import { useTheme } from '../../../context/ThemeContext';
-import poolLogo from '../../../assets/img/pool_logo.png';
+import DashboardBox from '@/components/ui/DashboardBox';
+import { useTheme } from '@/context/ThemeContext';
+import poolLogo from '@/assets/img/pool_logo.png';
 
 const Stake = () => {
   const { isDark } = useTheme();

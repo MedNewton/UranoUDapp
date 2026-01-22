@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme } from '../../context/ThemeContext';
-import { useWallet } from '../../context/WalletContext';
-import logoUrano from '../../assets/img/logo_urano.png';
+import { useTheme } from '@/context/ThemeContext';
+import { useWallet } from '@/context/WalletContext';
+import logoUrano from '@/assets/img/logo_urano.png';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);

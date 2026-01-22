@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import DashboardBox from '../../ui/DashboardBox';
-import { useTheme } from '../../../context/ThemeContext';
-import { usePortfolio } from '../../../context/PortfolioContext';
-import { useWallet } from '../../../context/WalletContext';
-import logoUrano from '../../../assets/img/pool_logo.png';
+import DashboardBox from '@/components/ui/DashboardBox';
+import { useTheme } from '@/context/ThemeContext';
+import { usePortfolio } from '@/context/PortfolioContext';
+import { useWallet } from '@/context/WalletContext';
+import logoUrano from '@/assets/img/pool_logo.png';
 
 // Importazione delle immagini
-import logoPlaceholder from '../../../assets/img/logo_urano.png';
-import logoBono from '../../../assets/img/bono_logo.png';
-import uranoTorquoiseVertical from '../../../assets/img/urano-turqoise vetical.png';
-import uranoBlackVertical from '../../../assets/img/urano-black vetical.png';
+import logoPlaceholder from '@/assets/img/logo_urano.png';
+import logoBono from '@/assets/img/bono_logo.png';
+import uranoTorquoiseVertical from '@/assets/img/urano-turqoise vetical.png';
+import uranoBlackVertical from '@/assets/img/urano-black vetical.png';
 
 const Portfolio = () => {
   const { isDark } = useTheme();

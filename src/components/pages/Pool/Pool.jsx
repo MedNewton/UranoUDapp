@@ -1,18 +1,18 @@
 import { useParams } from 'react-router-dom';
 import { useState } from 'react';
-import DashboardBox from '../../ui/DashboardBox';
-import KYCModal from '../../ui/KYCModal';
-import BuyModal from '../../ui/BuyModal';
-import { useTheme } from '../../../context/ThemeContext';
-import { useWallet } from '../../../context/WalletContext';
-import logoBono from '../../../assets/img/bono_logo.png';
-import logoUrano from '../../../assets/img/pool_logo.png';
+import DashboardBox from '@/components/ui/DashboardBox';
+import KYCModal from '@/components/ui/KYCModal';
+import BuyModal from '@/components/ui/BuyModal';
+import { useTheme } from '@/context/ThemeContext';
+import { useWallet } from '@/context/WalletContext';
+import logoBono from '@/assets/img/bono_logo.png';
+import logoUrano from '@/assets/img/pool_logo.png';
 
 // Import PDF files
-import presentazioneBook from '../../../assets/pdf/presentazione_book.pdf';
-import computoMetrico from '../../../assets/pdf/computo_metrico_estimativo.pdf';
-import quadroEconomico from '../../../assets/pdf/quadro_economico_palazzo_carafa.pdf';
-import relazioneFattibilita from '../../../assets/pdf/relazione_fattibilità.pdf';
+import presentazioneBook from '@/assets/pdf/presentazione_book.pdf';
+import computoMetrico from '@/assets/pdf/computo_metrico_estimativo.pdf';
+import quadroEconomico from '@/assets/pdf/quadro_economico_palazzo_carafa.pdf';
+import relazioneFattibilita from '@/assets/pdf/relazione_fattibilità.pdf';
 
 const Pool = () => {
   const { poolId } = useParams();
