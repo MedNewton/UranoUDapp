@@ -36,11 +36,11 @@ function App() {
       operationName: "Palazzo Carafa",
       assetsClass: "Real Estate",
       valueLocked: "$4,600,000.00",
-      apr: "37.85%",
-      estimatedROI: "7.25%",
+      indicativeReturn: "7.25%",
       uNFTSupply: "2,071/460,000",
       uNFTPrice: "$10",
       status: "Open",
+      timeLeft: "14d 6h",
       logo: logoBono
     },
     {
@@ -49,11 +49,11 @@ function App() {
       operationName: "Eco Vitae Resort",
       assetsClass: "Commercial Real Estate",
       valueLocked: "$2,850,000.00",
-      apr: "5.45%",
-      estimatedROI: "6.95%",
+      indicativeReturn: "6.95%",
       uNFTSupply: "780/1000",
       uNFTPrice: "$50",
       status: "Funding",
+      timeLeft: "7d 12h",
       logo: logoUrano
     },
     {
@@ -62,11 +62,11 @@ function App() {
       operationName: "Maritime Logistics Hub",
       assetsClass: "Infrastructure",
       valueLocked: "$3,250,000.00",
-      apr: "4.90%",
-      estimatedROI: "7.00%",
+      indicativeReturn: "7.00%",
       uNFTSupply: "425/1000",
       uNFTPrice: "$75",
       status: "Coming Soon",
+      timeLeft: "--",
       logo: logoUrano
     }
   ];
@@ -74,137 +74,177 @@ function App() {
   const HomePage = () => (
     <main className="pt-24 min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        {/* Box originali */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto mb-12">
-          {[0, 1].map((index) => (
-            <div key={`home-box-${index}`}>
-              <DashboardBox className="p-6">
-                {index === 0 ? (
-                  // Box sinistro con nuovo layout
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex items-center gap-2">
-                        <h2 className={`text-2xl font-conthrax ${subTextColor}`}>
-                          TTV
-                        </h2>
-                        <div className="relative inline-block">
-                          <div className={`w-5 h-5 rounded-full border ${isDark ? 'border-gray-500' : 'border-gray-400'} flex items-center justify-center cursor-help hover:border-[#2dbdc5] transition-colors`}
-                            onMouseEnter={(e) => {
-                              const tooltip = e.currentTarget.nextElementSibling;
-                              if (tooltip) tooltip.classList.remove('opacity-0');
-                            }}
-                            onMouseLeave={(e) => {
-                              const tooltip = e.currentTarget.nextElementSibling;
-                              if (tooltip) tooltip.classList.add('opacity-0');
-                            }}>
-                            <span className={`text-xs font-semibold ${subTextColor}`}>i</span>
-                          </div>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -translate-y-2 bg-gray-900 text-white text-xs rounded py-1 px-2 opacity-0 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10">
-                            Total Tokenized Value
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-[#14EFC0] font-conthrax">
-                        +4.75%
-                      </span>
+        {/* Top Stats Boxes - Full Width */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+          {/* TTV Box */}
+          <DashboardBox variant="card" className="p-6">
+            <div className="flex flex-col h-full">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className={`text-2xl font-conthrax ${subTextColor}`}>
+                    TTV
+                  </h2>
+                  <div className="relative inline-block">
+                    <div className={`w-5 h-5 rounded-full border ${isDark ? 'border-gray-600' : 'border-gray-400'} flex items-center justify-center cursor-help hover:border-[#2dbdc5] transition-colors`}
+                      onMouseEnter={(e) => {
+                        const tooltip = e.currentTarget.nextElementSibling;
+                        if (tooltip) tooltip.classList.remove('opacity-0');
+                      }}
+                      onMouseLeave={(e) => {
+                        const tooltip = e.currentTarget.nextElementSibling;
+                        if (tooltip) tooltip.classList.add('opacity-0');
+                      }}>
+                      <span className={`text-xs font-semibold ${subTextColor}`}>i</span>
                     </div>
-                    <div className="mt-2">
-                      <p className={`text-3xl font-bold ${textColor}`}>
-                        $89,002,751.00
-                      </p>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -translate-y-2 bg-[#1a1a2e] text-white text-xs rounded-lg py-2 px-3 opacity-0 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10 border border-[#2a2a4e]">
+                      Total Tokenized Value
                     </div>
                   </div>
-                ) : (
-                  // Box destro con My position - ora cliccabile
-                  <Link to="/portfolio" className="w-full">
-                    <div className="flex items-center justify-between h-24 hover:text-[#2dbdc5] transition-colors overflow-visible relative">
-                      <h2 className={`text-2xl font-conthrax ${subTextColor}`}>
-                        My Portfolio
-                      </h2>
-                      <img
-                        src={astronautaImg}
-                        alt="Astronauta"
-                        className="w-auto absolute right-4 top-1"
-                        style={{
-                          height: '160%',
-                          objectFit: 'cover',
-                          objectPosition: 'top right',
-                          maxWidth: '45%',
-                          clipPath: 'inset(0 0 25% 0)'
-                        }}
-                      />
-                    </div>
-                  </Link>
-                )}
-              </DashboardBox>
+                </div>
+                <span className="text-[#14EFC0] font-conthrax text-lg">
+                  +4.75%
+                </span>
+              </div>
+              <div className="mt-auto">
+                <p className={`text-4xl font-bold ${textColor}`}>
+                  $89,002,751.00
+                </p>
+              </div>
             </div>
-          ))}
+          </DashboardBox>
+
+          {/* Portfolio Box */}
+          <Link to="/portfolio" className="block">
+            <DashboardBox variant="card" className="p-6 h-full cursor-pointer overflow-hidden">
+              <div className="flex items-center justify-between h-full min-h-[100px] relative">
+                <h2 className={`text-2xl font-conthrax ${subTextColor} group-hover:text-[#2dbdc5] transition-colors`}>
+                  My Portfolio
+                </h2>
+                <img
+                  src={astronautaImg}
+                  alt="Astronauta"
+                  className="w-auto absolute right-0 top-2"
+                  style={{
+                    height: '140%',
+                    objectFit: 'cover',
+                    objectPosition: 'top right',
+                    maxWidth: '40%',
+                    clipPath: 'inset(0 0 20% 0)',
+                    scale: "1.35"
+                  }}
+                />
+              </div>
+            </DashboardBox>
+          </Link>
         </div>
 
-        {/* Nuovi box delle pool con scrollbar */}
-        <div className="mx-auto space-y-6 max-h-[60vh] overflow-y-auto pr-2" style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#2dbdc5 transparent'
-        }}>
-          {poolData.map((pool) => (
-            <Link to={`/pool/${pool.id}`} key={pool.id}>
-              <DashboardBox
-                className="p-6 hover:border-[#2dbdc5] transition-colors duration-200 mt-6"
-              >
-                <div className="flex items-center gap-8">
-                  {/* Sezione Company e Logo - riorganizzata */}
-                  <div className="min-w-[200px]">
-                    <h3 className={`text-sm ${subTextColor} mb-4 font-conthrax`}>Company</h3>
-                    <div className="flex gap-4">
-                      <div className="flex-shrink-0">
+        {/* Pools Table Section */}
+        <div className="w-full">
+          {/* Table Header */}
+          <div className={`grid grid-cols-12 gap-4 px-6 py-3 mb-2 ${subTextColor}`}>
+            <div className="col-span-2">
+              <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">Company<br />Name</span>
+            </div>
+            <div className="col-span-2 text-center">
+              <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">Asset<br />Class</span>
+            </div>
+            <div className="col-span-1 text-center">
+              <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">RWA<br />Value</span>
+            </div>
+            <div className="col-span-1 text-center">
+              <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">Indicative<br />Return Rate</span>
+            </div>
+            <div className="col-span-1 text-center">
+              <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">uShare<br />Supply</span>
+            </div>
+            <div className="col-span-1 text-center">
+              <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">uShare<br />Price</span>
+            </div>
+            <div className="col-span-2 text-center">
+              <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">Time<br />Left</span>
+            </div>
+            <div className="col-span-2 text-left">
+              <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">Pool<br />Status</span>
+            </div>
+          </div>
+
+          {/* Table Rows */}
+          <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1" style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: isDark ? '#2dbdc5 #0a0a0f' : '#2dbdc5 #e5e7eb'
+          }}>
+            {poolData.map((pool) => (
+              <Link to={`/pool/${pool.id}`} key={pool.id} className="block">
+                <DashboardBox variant="row" className="px-6 py-4">
+                  <div className="grid grid-cols-12 gap-4 items-center">
+                    {/* Company with Logo */}
+                    <div className="col-span-2 flex items-center gap-3">
+                      <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-[#1a1a2e]/50 flex items-center justify-center">
                         <img
                           src={pool.logo}
                           alt="Company Logo"
-                          className="h-16 w-auto"
+                          className="w-10 h-10 object-contain"
                         />
                       </div>
-                      <div className="flex flex-col justify-center">
-                        <p className={`text-lg font-conthrax ${textColor}`}>
+                      <div className="flex flex-col">
+                        <p className={`text-sm font-conthrax ${textColor} whitespace-nowrap`}>
                           {pool.companyName}
                         </p>
-                        <p className={`text-base font-conthrax ${textColor}`}>
+                        <p className={`text-xs ${subTextColor} whitespace-nowrap`}>
                           {pool.operationName}
                         </p>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Grid delle informazioni */}
-                  <div className="grid grid-cols-6 gap-4 flex-1">
-                    <div>
-                      <p className={`text-sm font-conthrax ${subTextColor} mb-1`}>Assets class</p>
-                      <p className={`font-semibold ${textColor}`}>{pool.assetsClass}</p>
+                    {/* Asset Class */}
+                    <div className="col-span-2 text-center">
+                      <p className={`text-sm ${textColor}`}>{pool.assetsClass}</p>
                     </div>
-                    <div>
-                      <p className={`text-sm font-conthrax ${subTextColor} mb-1`}>RWA Value</p>
-                      <p className={`font-semibold ${textColor}`}>{pool.valueLocked}</p>
+
+                    {/* RWA Value */}
+                    <div className="col-span-1 text-center">
+                      <p className={`text-sm font-medium ${textColor}`}>{pool.valueLocked}</p>
                     </div>
-                    <div>
-                      <p className={`text-sm font-conthrax ${subTextColor} mb-1`}>Estimated ROI</p>
-                      <p className={`font-semibold ${textColor}`}>{pool.apr}</p>
+
+                    {/* Indicative Return Rate */}
+                    <div className="col-span-1 text-center">
+                      <p className="text-sm font-semibold text-[#14EFC0]">{pool.indicativeReturn}</p>
                     </div>
-                    <div>
-                      <p className={`text-sm font-conthrax ${subTextColor} mb-1 whitespace-nowrap`}>uShare Supply</p>
-                      <p className="font-semibold text-[#2dbdc5]">{pool.uNFTSupply}</p>
+
+                    {/* uShare Supply */}
+                    <div className="col-span-1 text-center">
+                      <p className="text-sm font-medium text-[#2dbdc5]">{pool.uNFTSupply}</p>
                     </div>
-                    <div>
-                      <p className={`text-sm font-conthrax ${subTextColor} mb-1`}>uShare Price</p>
-                      <p className="font-semibold text-[#2dbdc5]">{pool.uNFTPrice}</p>
+
+                    {/* uShare Price */}
+                    <div className="col-span-1 text-center">
+                      <p className="text-sm font-medium text-[#2dbdc5]">{pool.uNFTPrice}</p>
                     </div>
-                    <div>
-                      <p className={`text-sm font-conthrax ${subTextColor} mb-1`}>Status</p>
-                      <p className="font-semibold text-[#2dbdc5]">{pool.status}</p>
+
+                    {/* Time Left */}
+                    <div className="col-span-2 text-center">
+                      <p className={`text-sm font-medium ${pool.timeLeft === '--' ? subTextColor : 'text-amber-400'}`}>
+                        {pool.timeLeft}
+                      </p>
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-2 text-left">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        pool.status === 'Open'
+                          ? 'bg-[#14EFC0]/20 text-[#14EFC0] border border-[#14EFC0]/30'
+                          : pool.status === 'Funding'
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                      }`}>
+                        {pool.status}
+                      </span>
                     </div>
                   </div>
-                </div>
-              </DashboardBox>
-            </Link>
-          ))}
+                </DashboardBox>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </main>
