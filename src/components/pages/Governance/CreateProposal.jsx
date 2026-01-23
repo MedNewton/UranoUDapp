@@ -9,7 +9,7 @@ const CreateProposal = () => {
   const textColor = isDark ? 'text-gray-200' : 'text-gray-900';
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
   
-  // Stati per i campi del form
+  // Stati per i campi del form 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -48,20 +48,23 @@ const CreateProposal = () => {
         <div className="max-w-4xl mx-auto">
           {/* Breadcrumb */}
           <div className="mb-6">
-            <Link to="/governance" className={`${subTextColor} hover:text-[#2dbdc5] transition-colors`}>
-              u2190 Back to Governance
+            <Link to="/governance" className={`${subTextColor} hover:text-[#14EFC0] transition-colors flex items-center gap-2`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+              </svg>
+              Back to Governance
             </Link>
           </div>
 
           <h1 className={`text-3xl font-conthrax mb-8 ${textColor}`}>Create Proposal</h1>
           
           <form onSubmit={handleSubmit}>
-            <DashboardBox className="p-6 mb-8">
-              <h2 className={`text-xl font-conthrax mb-6 ${textColor}`}>Basic Information</h2>
-              
+            <DashboardBox variant="card" className="p-6 mb-8">
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-6`}>Basic Information</h2>
+
               {/* Titolo */}
               <div className="mb-6">
-                <label className={`block text-sm font-conthrax ${subTextColor} mb-2`} htmlFor="title">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="title">
                   Title *
                 </label>
                 <input
@@ -69,163 +72,203 @@ const CreateProposal = () => {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className={`w-full bg-transparent border border-gray-700 rounded-lg p-3 ${textColor} focus:border-[#2dbdc5] outline-none transition-colors`}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                  }`}
                   placeholder="Enter a descriptive title"
                   required
                 />
               </div>
-              
+
               {/* Categoria */}
               <div className="mb-6">
-                <label className={`block text-sm font-conthrax ${subTextColor} mb-2`} htmlFor="category">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="category">
                   Category *
                 </label>
                 <select
                   id="category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className={`w-full bg-transparent border border-gray-700 rounded-lg p-3 ${textColor} focus:border-[#2dbdc5] outline-none transition-colors`}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 focus:border-teal-500'
+                  }`}
                   required
                 >
-                  <option value="" disabled>Select a category</option>
+                  <option value="" disabled className={isDark ? 'bg-[#1a1a2e]' : 'bg-white'}>Select a category</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat} className="bg-gray-900">{cat}</option>
+                    <option key={cat} value={cat} className={isDark ? 'bg-[#1a1a2e]' : 'bg-white'}>{cat}</option>
                   ))}
                 </select>
               </div>
-              
+
               {/* Descrizione breve */}
               <div className="mb-6">
-                <label className={`block text-sm font-conthrax ${subTextColor} mb-2`} htmlFor="description">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="description">
                   Short Description *
                 </label>
                 <textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className={`w-full bg-transparent border border-gray-700 rounded-lg p-3 ${textColor} focus:border-[#2dbdc5] outline-none transition-colors`}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                  }`}
                   placeholder="Provide a brief description (max 200 characters)"
                   rows="2"
                   maxLength="200"
                   required
                 ></textarea>
-                <p className="text-xs text-gray-500 mt-1">{description.length}/200 characters</p>
+                <p className={`text-xs ${subTextColor} mt-1`}>{description.length}/200 characters</p>
               </div>
             </DashboardBox>
 
-            <DashboardBox className="p-6 mb-8">
-              <h2 className={`text-xl font-conthrax mb-6 ${textColor}`}>Detailed Information</h2>
-              
+            <DashboardBox variant="card" className="p-6 mb-8">
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-6`}>Detailed Information</h2>
+
               {/* Summary */}
               <div className="mb-6">
-                <label className={`block text-sm font-conthrax ${subTextColor} mb-2`} htmlFor="summary">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="summary">
                   Summary *
                 </label>
                 <textarea
                   id="summary"
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
-                  className={`w-full bg-transparent border border-gray-700 rounded-lg p-3 ${textColor} focus:border-[#2dbdc5] outline-none transition-colors`}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                  }`}
                   placeholder="Provide a comprehensive summary of your proposal"
                   rows="4"
                   required
                 ></textarea>
               </div>
-              
+
               {/* Implementation */}
               <div className="mb-6">
-                <label className={`block text-sm font-conthrax ${subTextColor} mb-2`} htmlFor="implementation">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="implementation">
                   Implementation *
                 </label>
                 <textarea
                   id="implementation"
                   value={implementation}
                   onChange={(e) => setImplementation(e.target.value)}
-                  className={`w-full bg-transparent border border-gray-700 rounded-lg p-3 ${textColor} focus:border-[#2dbdc5] outline-none transition-colors`}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                  }`}
                   placeholder="Describe how this proposal will be implemented"
                   rows="6"
                   required
                 ></textarea>
-                <p className="text-xs text-gray-500 mt-1">Markdown formatting is supported</p>
+                <p className={`text-xs ${subTextColor} mt-1`}>Markdown formatting is supported</p>
               </div>
-              
+
               {/* Benefits */}
               <div className="mb-6">
-                <label className={`block text-sm font-conthrax ${subTextColor} mb-2`} htmlFor="benefits">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="benefits">
                   Benefits *
                 </label>
                 <textarea
                   id="benefits"
                   value={benefits}
                   onChange={(e) => setBenefits(e.target.value)}
-                  className={`w-full bg-transparent border border-gray-700 rounded-lg p-3 ${textColor} focus:border-[#2dbdc5] outline-none transition-colors`}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                  }`}
                   placeholder="List the benefits of implementing this proposal"
                   rows="4"
                   required
                 ></textarea>
               </div>
-              
+
               {/* Risks */}
               <div className="mb-6">
-                <label className={`block text-sm font-conthrax ${subTextColor} mb-2`} htmlFor="risks">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="risks">
                   Risks *
                 </label>
                 <textarea
                   id="risks"
                   value={risks}
                   onChange={(e) => setRisks(e.target.value)}
-                  className={`w-full bg-transparent border border-gray-700 rounded-lg p-3 ${textColor} focus:border-[#2dbdc5] outline-none transition-colors`}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                  }`}
                   placeholder="Identify potential risks and mitigation strategies"
                   rows="4"
                   required
                 ></textarea>
               </div>
-              
+
               {/* Alternatives */}
               <div className="mb-6">
-                <label className={`block text-sm font-conthrax ${subTextColor} mb-2`} htmlFor="alternatives">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="alternatives">
                   Alternatives Considered
                 </label>
                 <textarea
                   id="alternatives"
                   value={alternatives}
                   onChange={(e) => setAlternatives(e.target.value)}
-                  className={`w-full bg-transparent border border-gray-700 rounded-lg p-3 ${textColor} focus:border-[#2dbdc5] outline-none transition-colors`}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                  }`}
                   placeholder="Describe alternative approaches that were considered"
                   rows="4"
                 ></textarea>
               </div>
             </DashboardBox>
 
-            <DashboardBox className="p-6 mb-8">
-              <h2 className={`text-xl font-conthrax mb-6 ${textColor}`}>Submission</h2>
-              
+            <DashboardBox variant="card" className="p-6 mb-8">
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-6`}>Submission</h2>
+
               <div className="mb-6">
                 <div className="flex items-start">
                   <div className="flex items-center h-5">
                     <input
                       id="terms"
                       type="checkbox"
-                      className="w-4 h-4 border border-gray-700 rounded bg-transparent focus:ring-[#2dbdc5] focus:ring-2"
+                      className={`w-4 h-4 rounded focus:ring-[#14EFC0] focus:ring-2 ${
+                        isDark
+                          ? 'bg-[#1a1a2e]/50 border-[#2a2a4e]'
+                          : 'bg-gray-50 border-gray-300'
+                      }`}
                       required
                     />
                   </div>
-                  <label htmlFor="terms" className={`ml-2 text-sm ${subTextColor}`}>
+                  <label htmlFor="terms" className={`ml-3 text-sm ${subTextColor}`}>
                     I confirm that this proposal complies with the governance guidelines and I understand that once submitted, it cannot be modified.
                   </label>
                 </div>
               </div>
-              
-              <div className="flex justify-end gap-4">
-                <Link 
+
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
+                <Link
                   to="/governance"
-                  className="px-6 py-3 border border-gray-700 rounded-lg font-conthrax text-gray-400 hover:border-gray-500 transition-colors"
+                  className={`px-6 py-3 rounded-lg font-conthrax text-sm text-center transition-colors ${
+                    isDark
+                      ? 'border border-[#2a2a4e] text-gray-300 hover:border-[#14EFC0] hover:text-[#14EFC0]'
+                      : 'border border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
+                  }`}
                 >
                   Cancel
                 </Link>
-                <button 
+                <button
                   type="submit"
-                  className="px-6 py-3 bg-[#2dbdc5] text-white rounded-lg font-conthrax hover:bg-[#25a4ab] transition-colors"
+                  className="px-6 py-3 bg-[#14EFC0] text-black rounded-lg font-conthrax text-sm hover:bg-[#12d4ad] transition-colors"
                 >
                   Submit Proposal
                 </button>

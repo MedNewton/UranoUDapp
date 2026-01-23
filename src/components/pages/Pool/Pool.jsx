@@ -221,29 +221,31 @@ Key financial indicators:
   return (
     <>
       <div className="container mx-auto px-4 py-8 pt-24 min-h-screen">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Box sinistro fisso */}
           <div className="lg:w-1/3 lg:sticky lg:top-24 lg:self-start">
-            <DashboardBox className="p-6">
-              <h1 className={`text-2xl font-conthrax mb-4 ${textColor}`}>
+            <DashboardBox variant="card" className="p-6">
+              <h1 className={`text-xl lg:text-2xl font-conthrax mb-4 ${textColor}`}>
                 {poolData.poolTitle || poolData.companyName}
               </h1>
-              <p className={`${subTextColor} mb-6 text-sm`}>
+              <p className={`${subTextColor} mb-6 text-sm leading-relaxed`}>
                 {poolData.poolSubtitle || poolData.description}
               </p>
               <div className="space-y-4">
-                <div>
-                  <p className={`text-sm ${subTextColor} mb-1`}>Estimated ROI</p>
-                  <p className={`text-3xl font-conthrax ${textColor}`}>{poolData.roi}</p>
+                <div className={`p-4 rounded-lg ${isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-100'}`}>
+                  <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>Indicative Return Rate</p>
+                  <p className="text-3xl font-conthrax text-[#14EFC0]">{poolData.roi}</p>
                 </div>
               </div>
               <button
                 onClick={toggleWalletConnection}
                 className={`
-                  w-full px-4 py-2 rounded-lg font-semibold mt-6 transition-colors
-                  ${isConnected 
-                    ? 'bg-gray-800 text-[#2dbdc5] hover:bg-gray-700' 
-                    : 'bg-[#2dbdc5] text-white hover:bg-[#25a4ab]'
+                  w-full px-4 py-3 rounded-lg font-conthrax text-sm mt-6 transition-all
+                  ${isConnected
+                    ? isDark
+                      ? 'bg-[#1a1a2e] text-[#14EFC0] border border-[#14EFC0]/30 hover:border-[#14EFC0]/60'
+                      : 'bg-gray-100 text-teal-600 border border-teal-300 hover:border-teal-500'
+                    : 'bg-[#14EFC0] text-black hover:bg-[#12d4ad]'
                   }
                 `}
               >
@@ -253,23 +255,25 @@ Key financial indicators:
 
             {/* Pulsanti Buy e Claim (visibili solo quando il wallet è connesso) */}
             {isConnected && (
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <button 
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button
                   onClick={() => {
                     if (hasCompletedKYC || kycModalShown) {
-                      // Se ha completato il KYC o il modale è già stato mostrato, vai direttamente al modale di acquisto
                       setIsBuyModalOpen(true);
                     } else {
-                      // Prima volta: mostra il modale KYC e segna che è stato mostrato
                       setIsKYCModalOpen(true);
-                      setKycShown(); // Usa la funzione dal contesto che aggiorna anche il localStorage
+                      setKycShown();
                     }
                   }}
-                  className="bg-[#2dbdc5] text-white px-6 py-3 rounded-lg font-conthrax hover:bg-[#25a4ab] transition-colors"
+                  className="bg-[#14EFC0] text-black px-6 py-3 rounded-lg font-conthrax text-sm hover:bg-[#12d4ad] transition-colors"
                 >
                   Buy
                 </button>
-                <button className="border border-[#2dbdc5] text-[#2dbdc5] px-6 py-3 rounded-lg font-conthrax hover:bg-[#2dbdc5] hover:text-white transition-colors">
+                <button className={`px-6 py-3 rounded-lg font-conthrax text-sm transition-colors ${
+                  isDark
+                    ? 'border border-[#2a2a4e] text-gray-300 hover:border-[#14EFC0] hover:text-[#14EFC0]'
+                    : 'border border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
+                }`}>
                   Claim
                 </button>
               </div>
@@ -277,170 +281,184 @@ Key financial indicators:
           </div>
 
           {/* Contenuto destro scrollabile */}
-          <div className="lg:w-2/3 space-y-8">
+          <div className="lg:w-2/3 space-y-6">
             {/* Box 1: Stats (fisso) */}
-            <DashboardBox className="p-6">
+            <DashboardBox variant="card" className="p-6">
               <div className="flex flex-col items-start">
-                <p className={`text-lg font-conthrax ${subTextColor} mb-2`}>RWA VALUE</p>
-                <p className={`text-4xl font-semibold ${textColor}`}>{poolData.tvl}</p>
+                <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>RWA Value</p>
+                <p className={`text-3xl lg:text-4xl font-bold ${textColor}`}>{poolData.tvl}</p>
               </div>
             </DashboardBox>
 
             {/* Box 2: Cross Layout */}
-            <DashboardBox className="p-6">
-              <div className="relative grid grid-cols-2">
+            <DashboardBox variant="card" className="p-6">
+              <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-0">
                 {/* Top Left */}
-                <div className="pb-8 pr-8">
-                  <p className={`text-sm ${subTextColor} mb-1`}>Projected RWA Value at Maturity</p>
-                  <p className={`text-2xl font-semibold ${textColor}`}>
+                <div className="sm:pb-6 sm:pr-6 sm:border-r sm:border-b border-[#1a1a2e]">
+                  <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>Projected RWA Value at Maturity</p>
+                  <p className={`text-xl lg:text-2xl font-semibold ${textColor}`}>
                     {poolData.interest}
                   </p>
                 </div>
-                
+
                 {/* Top Right */}
-                <div className="pb-8 pl-8">
-                  <p className={`text-sm ${subTextColor} mb-1`}>Maturity Date</p>
-                  <p className={`text-2xl font-semibold ${textColor}`}>
+                <div className="sm:pb-6 sm:pl-6 sm:border-b border-[#1a1a2e]">
+                  <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>Maturity Date</p>
+                  <p className={`text-xl lg:text-2xl font-semibold ${textColor}`}>
                     {poolData.date}
                   </p>
                 </div>
-                
+
                 {/* Bottom Left */}
-                <div className="pt-8 pr-8">
-                  <p className={`text-sm ${subTextColor} mb-1`}>Payout Frequency</p>
-                  <p className={`text-2xl font-semibold text-[#2dbdc5]`}>
+                <div className="sm:pt-6 sm:pr-6 sm:border-r border-[#1a1a2e]">
+                  <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>Payout Frequency</p>
+                  <p className="text-xl lg:text-2xl font-semibold text-[#14EFC0]">
                     {poolData.status}
                   </p>
                 </div>
-                
+
                 {/* Bottom Right */}
-                <div className="pt-8 pl-8">
-                  <p className={`text-sm ${subTextColor} mb-1`}>Payout Yield (APR)</p>
-                  <p className={`text-2xl font-semibold ${textColor}`}>
+                <div className="sm:pt-6 sm:pl-6">
+                  <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>Payout Yield (APR)</p>
+                  <p className={`text-xl lg:text-2xl font-semibold ${textColor}`}>
                     {poolData.apr}
                   </p>
-                </div>
-
-                {/* Solo la croce centrale */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/30"></div>
-                  <div className="absolute top-1/2 left-0 right-0 h-px bg-white/30"></div>
                 </div>
               </div>
             </DashboardBox>
 
             {/* Box 3: Company Info */}
-            <DashboardBox className="p-6">
-              <h2 className={`text-xl font-conthrax mb-6 ${textColor}`}>
+            <DashboardBox variant="card" className="p-6">
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-6`}>
                 Company
               </h2>
               <div className="flex items-center gap-4 mb-4">
-                <img src={logoBono} alt={poolData.companyName} className="w-8 h-8 object-contain" />
-                <h3 className={`text-xl font-conthrax ${textColor}`}>{poolData.companyName}</h3>
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-100'}`}>
+                  <img src={logoBono} alt={poolData.companyName} className="w-8 h-8 object-contain" />
+                </div>
+                <h3 className={`text-lg font-conthrax ${textColor}`}>{poolData.companyName}</h3>
               </div>
-              <p className={`${subTextColor} text-sm`}>
+              <p className={`${subTextColor} text-sm leading-relaxed`}>
                 {poolData.companyDescription || poolData.description}
               </p>
-              <div className="flex justify-between items-center mt-4">
-                <button className="px-4 py-1 rounded-full text-sm bg-orange-500/20 text-orange-500">
+              <div className="flex flex-wrap justify-between items-center mt-6 gap-3">
+                <span className="px-4 py-1.5 rounded-full text-xs font-medium bg-[#14EFC0]/20 text-[#14EFC0] border border-[#14EFC0]/30">
                   Verified
-                </button>
-                <a href={poolData.website} target="_blank" rel="noopener noreferrer" className="px-4 py-1.5 rounded-lg text-sm border border-[#2dbdc5] text-[#2dbdc5] hover:bg-[#2dbdc5] hover:text-white transition-colors">
+                </span>
+                <a href={poolData.website} target="_blank" rel="noopener noreferrer" className={`px-4 py-1.5 rounded-lg text-sm transition-colors ${
+                  isDark
+                    ? 'border border-[#2a2a4e] text-gray-300 hover:border-[#14EFC0] hover:text-[#14EFC0]'
+                    : 'border border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
+                }`}>
                   Website
                 </a>
               </div>
             </DashboardBox>
 
             {/* Box 4: Analysis */}
-            <DashboardBox className="p-6">
-              <h2 className={`text-xl font-conthrax mb-6 ${textColor}`}>
+            <DashboardBox variant="card" className="p-6">
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-6`}>
                 Analysis
               </h2>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-wrap items-center justify-between mb-4 gap-4">
                 <div className="flex items-center gap-4">
-                  <img src={logoBono} alt={poolData.companyName} className="w-8 h-8 object-contain" />
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-100'}`}>
+                    <img src={logoBono} alt={poolData.companyName} className="w-6 h-6 object-contain" />
+                  </div>
                   <div>
                     <h3 className={`font-semibold ${textColor}`}>{poolData.analysis.author}</h3>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm ${subTextColor}`}>Rating:</span>
-                  <span className={textColor}>{poolData.rating}</span>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-100'}`}>
+                  <span className={`text-xs ${subTextColor}`}>Rating:</span>
+                  <span className="text-[#14EFC0] font-semibold">{poolData.rating}</span>
                 </div>
               </div>
-              <p className={`${subTextColor} text-sm mb-4`} style={{ whiteSpace: 'pre-wrap' }}>
+              <p className={`${subTextColor} text-sm mb-6 leading-relaxed`} style={{ whiteSpace: 'pre-wrap' }}>
                 {poolData.analysis?.overview || poolData.description}
               </p>
-              <div className="mt-4 space-y-3">
-                <div>
-                  <p className={`text-sm font-semibold ${textColor} mb-1`}>Strengths</p>
-                  <p className={`text-sm ${subTextColor}`}>{poolData.analysis?.strengths || "No data available"}</p>
+              <div className="space-y-4">
+                <div className={`p-4 rounded-lg ${isDark ? 'bg-[#14EFC0]/5 border border-[#14EFC0]/20' : 'bg-teal-50 border border-teal-200'}`}>
+                  <p className={`text-xs font-conthrax uppercase tracking-wider ${isDark ? 'text-[#14EFC0]' : 'text-teal-600'} mb-2`}>Strengths</p>
+                  <p className={`text-sm ${textColor}`}>{poolData.analysis?.strengths || "No data available"}</p>
                 </div>
-                <div>
-                  <p className={`text-sm font-semibold ${textColor} mb-1`}>Risks</p>
-                  <p className={`text-sm ${subTextColor}`}>{poolData.analysis?.risks || "No data available"}</p>
+                <div className={`p-4 rounded-lg ${isDark ? 'bg-amber-500/5 border border-amber-500/20' : 'bg-amber-50 border border-amber-200'}`}>
+                  <p className={`text-xs font-conthrax uppercase tracking-wider ${isDark ? 'text-amber-400' : 'text-amber-600'} mb-2`}>Risks</p>
+                  <p className={`text-sm ${textColor}`}>{poolData.analysis?.risks || "No data available"}</p>
                 </div>
               </div>
-              <div className="flex justify-between items-center mt-8">
-                <button className="px-4 py-1 rounded-full text-sm bg-orange-500/20 text-orange-500">
+              <div className="flex flex-wrap justify-between items-center mt-6 gap-3">
+                <span className="px-4 py-1.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
                   Feedback
-                </button>
-                <button className="px-4 py-1.5 rounded-lg text-sm border border-[#2dbdc5] text-[#2dbdc5] hover:bg-[#2dbdc5] hover:text-white transition-colors">
+                </span>
+                <button className={`px-4 py-1.5 rounded-lg text-sm transition-colors ${
+                  isDark
+                    ? 'border border-[#2a2a4e] text-gray-300 hover:border-[#14EFC0] hover:text-[#14EFC0]'
+                    : 'border border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
+                }`}>
                   Executive
                 </button>
               </div>
             </DashboardBox>
 
             {/* Box 5: Investment Structure */}
-            <DashboardBox className="p-6">
-              <h2 className={`text-xl font-conthrax mb-6 ${textColor}`}>
+            <DashboardBox variant="card" className="p-6">
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-6`}>
                 Investment Structure
               </h2>
               <div className="space-y-6">
-                <div className="flex items-start gap-8">
-                  <p className={`w-1/3 ${subTextColor}`}>Deal Type + Asset Scope</p>
-                  <p className={`w-2/3 ${textColor}`}>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
+                  <p className={`sm:w-1/3 text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>Deal Type + Asset Scope</p>
+                  <p className={`sm:w-2/3 text-sm ${textColor}`}>
                     {poolData.investment?.dealType || "On-chain capital for this pool is being raised into a single tranche"}
                   </p>
                 </div>
-                <div className="flex items-start gap-8">
-                  <p className={`w-1/3 ${subTextColor}`}>Revenue Streams</p>
-                  <p className={`w-2/3 ${textColor}`} style={{ whiteSpace: 'pre-wrap' }}>
+                <div className={`border-t ${isDark ? 'border-[#1a1a2e]' : 'border-gray-200'}`}></div>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
+                  <p className={`sm:w-1/3 text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>Revenue Streams</p>
+                  <p className={`sm:w-2/3 text-sm ${textColor}`} style={{ whiteSpace: 'pre-wrap' }}>
                     {poolData.investment?.revenueStreams || "Senior The capital invested in this pool will be repaid pari passu with other senior debt, if any, raised by the company"}
                   </p>
                 </div>
-                <div className="flex items-start gap-8">
-                  <p className={`w-1/3 ${subTextColor}`}>Projections</p>
-                  <p className={`w-2/3 ${textColor}`} style={{ whiteSpace: 'pre-wrap' }}>{poolData.investment?.projections || "Yes"}</p>
+                <div className={`border-t ${isDark ? 'border-[#1a1a2e]' : 'border-gray-200'}`}></div>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
+                  <p className={`sm:w-1/3 text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>Projections</p>
+                  <p className={`sm:w-2/3 text-sm ${textColor}`} style={{ whiteSpace: 'pre-wrap' }}>{poolData.investment?.projections || "Yes"}</p>
                 </div>
-                <div className="flex items-start gap-8">
-                  <p className={`w-1/3 ${subTextColor}`}>About</p>
-                  <p className={`w-2/3 ${textColor}`}>
+                <div className={`border-t ${isDark ? 'border-[#1a1a2e]' : 'border-gray-200'}`}></div>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
+                  <p className={`sm:w-1/3 text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>About</p>
+                  <p className={`sm:w-2/3 text-sm ${textColor}`}>
                     Investors can access borrower-related updates via the investment gated Discord Channel
                   </p>
                 </div>
 
                 {/* Attachments section */}
-                <div className="flex items-start gap-8">
-                  <p className={`w-1/3 ${subTextColor}`}>Attachments</p>
-                  <div className="w-2/3 space-y-3">
+                <div className={`border-t ${isDark ? 'border-[#1a1a2e]' : 'border-gray-200'}`}></div>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
+                  <p className={`sm:w-1/3 text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>Attachments</p>
+                  <div className="sm:w-2/3 space-y-3">
                     {poolData.attachments && poolData.attachments.length > 0 ? (
                       poolData.attachments.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30">
+                        <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-100'}`}>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#2dbdc5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-[#2a2a4e]' : 'bg-gray-200'}`}>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#14EFC0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                               </svg>
                             </div>
-                            <span className={textColor}>{file.name}</span>
+                            <span className={`text-sm ${textColor}`}>{file.name}</span>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className={`text-sm ${subTextColor}`}>{file.size}</span>
-                            <a 
-                              href={file.file} 
-                              download={file.name} 
-                              className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center hover:bg-[#2dbdc5] hover:text-white transition-colors"
+                            <span className={`text-xs ${subTextColor}`}>{file.size}</span>
+                            <a
+                              href={file.file}
+                              download={file.name}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                isDark
+                                  ? 'bg-[#2a2a4e] hover:bg-[#14EFC0] hover:text-black text-gray-300'
+                                  : 'bg-gray-200 hover:bg-teal-500 hover:text-white text-gray-600'
+                              }`}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -450,7 +468,7 @@ Key financial indicators:
                         </div>
                       ))
                     ) : (
-                      <p className={`${subTextColor}`}>No attachments available</p>
+                      <p className={`${subTextColor} text-sm`}>No attachments available</p>
                     )}
                   </div>
                 </div>
@@ -458,28 +476,28 @@ Key financial indicators:
             </DashboardBox>
 
             {/* Box 6: Transactions */}
-            <DashboardBox className="p-6">
-              <h2 className={`text-xl font-conthrax mb-4 ${textColor}`}>Transactions</h2>
+            <DashboardBox variant="card" className="p-6">
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-6`}>Transactions</h2>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className={`${subTextColor} text-sm text-left`}>
-                      <th className="pb-4 font-medium">Hash</th>
-                      <th className="pb-4 font-medium">Type</th>
-                      <th className="pb-4 font-medium">Amount</th>
-                      <th className="pb-4 font-medium">Date</th>
-                      <th className="pb-4 font-medium">Tx</th>
+                    <tr className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} text-left`}>
+                      <th className="pb-4">Hash</th>
+                      <th className="pb-4">Type</th>
+                      <th className="pb-4">Amount</th>
+                      <th className="pb-4">Date</th>
+                      <th className="pb-4">Tx</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-700/20">
+                  <tbody className={`divide-y ${isDark ? 'divide-[#1a1a2e]' : 'divide-gray-200'}`}>
                     {transactions.map((tx) => (
-                      <tr key={tx.id} className={textColor}>
-                        <td className="py-4">{tx.hash}</td>
+                      <tr key={tx.id} className={`text-sm ${textColor}`}>
+                        <td className="py-4 font-mono">{tx.hash}</td>
                         <td className="py-4">{tx.type}</td>
                         <td className="py-4">{tx.amount}</td>
                         <td className="py-4">{tx.date}</td>
                         <td className="py-4">
-                          <a href="#" className="text-[#2dbdc5] hover:underline">{tx.tx}</a>
+                          <a href="#" className="text-[#14EFC0] hover:underline">{tx.tx}</a>
                         </td>
                       </tr>
                     ))}

@@ -26,7 +26,7 @@ function App() {
   // Modifichiamo il colore di sfondo per essere più scuro
   const bgColor = isDark ? 'bg-black' : 'bg-gray-50';
   const textColor = isDark ? 'text-gray-200' : 'text-gray-900';
-  const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
+  const subTextColor = isDark ? 'text-white' : 'text-gray-600';
 
   // Dati di esempio - puoi sostituirli con i tuoi dati reali
   const poolData = [

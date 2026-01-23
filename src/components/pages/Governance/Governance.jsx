@@ -63,11 +63,11 @@ const Governance = () => {
   // Funzione per ottenere il colore dello stato
   const getStatusColor = (status) => {
     switch(status) {
-      case 'active': return 'bg-[#2dbdc5]/20 text-[#2dbdc5]';
-      case 'passed': return 'bg-green-500/20 text-green-500';
-      case 'rejected': return 'bg-red-500/20 text-red-500';
-      case 'pending': return 'bg-yellow-500/20 text-yellow-500';
-      default: return 'bg-gray-500/20 text-gray-500';
+      case 'active': return 'bg-[#14EFC0]/20 text-[#14EFC0] border border-[#14EFC0]/30';
+      case 'passed': return 'bg-green-500/20 text-green-400 border border-green-500/30';
+      case 'rejected': return 'bg-red-500/20 text-red-400 border border-red-500/30';
+      case 'pending': return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border border-gray-500/30';
     }
   };
 
@@ -85,113 +85,135 @@ const Governance = () => {
   return (
     <main className="pt-24 min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header con titolo e statistiche */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <h1 className={`text-3xl font-conthrax mb-4 md:mb-0 ${textColor}`}>Governance</h1>
-            
-            <div className="flex gap-6">
-              <div className="text-center">
-                <p className={`text-sm ${subTextColor}`}>Total Proposals</p>
-                <p className={`text-2xl font-conthrax ${textColor}`}>{proposals.length}</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-sm ${subTextColor}`}>Active Proposals</p>
-                <p className={`text-2xl font-conthrax text-[#2dbdc5]`}>
-                  {proposals.filter(p => p.status === 'active').length}
-                </p>
-              </div>
+        {/* Header con titolo e statistiche */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <h1 className={`text-3xl font-conthrax ${textColor}`}>Governance</h1>
+
+          <div className="flex gap-4">
+            <div className={`px-5 py-3 rounded-lg text-center ${isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-100'}`}>
+              <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Total Proposals</p>
+              <p className={`text-2xl font-bold ${textColor}`}>{proposals.length}</p>
             </div>
-          </div>
-
-          {/* Box per creare nuova proposta */}
-          <DashboardBox className="p-6 mb-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div>
-                <h2 className={`text-xl font-conthrax mb-2 ${textColor}`}>Create Proposal</h2>
-                <p className={`${subTextColor}`}>Submit a new governance proposal to improve the protocol</p>
-              </div>
-              <Link 
-                to="/governance/create" 
-                className="mt-4 md:mt-0 px-6 py-3 bg-[#2dbdc5] text-white rounded-lg font-conthrax hover:bg-[#25a4ab] transition-colors"
-              >
-                New Proposal
-              </Link>
+            <div className={`px-5 py-3 rounded-lg text-center ${isDark ? 'bg-[#14EFC0]/10 border border-[#14EFC0]/20' : 'bg-teal-50 border border-teal-200'}`}>
+              <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Active Proposals</p>
+              <p className="text-2xl font-bold text-[#14EFC0]">
+                {proposals.filter(p => p.status === 'active').length}
+              </p>
             </div>
-          </DashboardBox>
-
-          {/* Filtri */}
-          <div className="flex flex-wrap gap-4 mb-6">
-            {['all', 'active', 'passed', 'rejected', 'pending'].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-full font-conthrax transition-colors ${activeFilter === filter 
-                  ? 'bg-[#2dbdc5]/10 text-[#2dbdc5]' 
-                  : `${subTextColor}`
-                }`}
-              >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {/* Elenco proposte */}
-          <div className="space-y-6">
-            {filteredProposals.map((proposal) => (
-              <Link to={`/governance/${proposal.id}`} key={proposal.id}>
-                <DashboardBox className="p-6 hover:shadow-lg hover:shadow-[#2dbdc5]/20 transition-all duration-300">
-                  <div className="flex flex-col">
-                    {/* Header della proposta */}
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className={`text-xl font-conthrax mb-2 ${textColor}`}>{proposal.title}</h3>
-                        <p className={`${subTextColor} text-sm mb-4`}>{proposal.description}</p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(proposal.status)}`}>
-                        {getStatusText(proposal.status)}
-                      </span>
-                    </div>
-                    
-                    {/* Barra di avanzamento per i voti (solo per proposte attive) */}
-                    {proposal.status === 'active' && (
-                      <div className="mb-4">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-green-500 font-conthrax">For: {proposal.votes.for}%</span>
-                          <span className="text-red-500 font-conthrax">Against: {proposal.votes.against}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-green-500 to-[#2dbdc5]"
-                            style={{ width: `${proposal.votes.for}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Footer con metadati */}
-                    <div className="flex flex-wrap justify-between mt-2 pt-4 border-t border-gray-700/30">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <p className={`text-xs ${subTextColor}`}>Category</p>
-                          <p className={`text-sm ${textColor}`}>{proposal.category}</p>
-                        </div>
-                        <div>
-                          <p className={`text-xs ${subTextColor}`}>Created by</p>
-                          <p className={`text-sm ${textColor}`}>{proposal.creator}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <p className={`text-xs ${subTextColor}`}>End Date</p>
-                        <p className={`text-sm ${textColor}`}>{proposal.endDate}</p>
-                      </div>
-                    </div>
-                  </div>
-                </DashboardBox>
-              </Link>
-            ))}
           </div>
         </div>
+
+        {/* Box per creare nuova proposta */}
+        <DashboardBox variant="card" className="p-6 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>Create Proposal</h2>
+              <p className={`text-sm ${textColor}`}>Submit a new governance proposal to improve the protocol</p>
+            </div>
+            <Link
+              to="/governance/create"
+              className="px-6 py-3 bg-[#14EFC0] text-black rounded-lg font-conthrax text-sm hover:bg-[#12d4ad] transition-colors whitespace-nowrap"
+            >
+              New Proposal
+            </Link>
+          </div>
+        </DashboardBox>
+
+        {/* Filtri */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {['all', 'active', 'passed', 'rejected', 'pending'].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              className={`px-4 py-2 rounded-lg font-conthrax text-sm transition-all ${
+                activeFilter === filter
+                  ? isDark
+                    ? 'bg-[#14EFC0]/20 text-[#14EFC0] border border-[#14EFC0]/30'
+                    : 'bg-teal-100 text-teal-700 border border-teal-300'
+                  : isDark
+                    ? 'bg-[#1a1a2e]/50 text-gray-400 border border-[#2a2a4e] hover:border-[#3a3a5e]'
+                    : 'bg-gray-100 text-gray-600 border border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Elenco proposte */}
+        <div className="space-y-4">
+          {filteredProposals.map((proposal) => (
+            <Link to={`/governance/${proposal.id}`} key={proposal.id} className="block">
+              <DashboardBox variant="row" className="p-6">
+                <div className="flex flex-col">
+                  {/* Header della proposta */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-4">
+                    <div className="flex-1">
+                      <h3 className={`text-lg font-conthrax mb-2 ${textColor}`}>{proposal.title}</h3>
+                      <p className={`${subTextColor} text-sm`}>{proposal.description}</p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(proposal.status)}`}>
+                      {getStatusText(proposal.status)}
+                    </span>
+                  </div>
+
+                  {/* Barra di avanzamento per i voti (solo per proposte attive) */}
+                  {proposal.status === 'active' && (
+                    <div className="mb-4">
+                      <div className="flex justify-between text-xs mb-2">
+                        <span className="text-[#14EFC0] font-conthrax">For: {proposal.votes.for}%</span>
+                        <span className="text-red-400 font-conthrax">Against: {proposal.votes.against}%</span>
+                      </div>
+                      <div className={`h-2 w-full rounded-full overflow-hidden ${isDark ? 'bg-[#1a1a2e]' : 'bg-gray-200'}`}>
+                        <div
+                          className="h-full bg-gradient-to-r from-[#14EFC0] to-[#2dbdc5] transition-all duration-500"
+                          style={{ width: `${proposal.votes.for}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer con metadati */}
+                  <div className={`flex flex-wrap justify-between items-center gap-4 pt-4 border-t ${isDark ? 'border-[#1a1a2e]' : 'border-gray-200'}`}>
+                    <div className="flex items-center gap-6">
+                      <div>
+                        <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Category</p>
+                        <span className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-[#1a1a2e] text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
+                          {proposal.category}
+                        </span>
+                      </div>
+                      <div>
+                        <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Created by</p>
+                        <p className={`text-sm font-mono ${textColor}`}>{proposal.creator}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>End Date</p>
+                      <p className={`text-sm ${textColor}`}>{proposal.endDate}</p>
+                    </div>
+                  </div>
+                </div>
+              </DashboardBox>
+            </Link>
+          ))}
+        </div>
+
+        {/* Empty state */}
+        {filteredProposals.length === 0 && (
+          <DashboardBox variant="card" className="p-12 text-center">
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-[#1a1a2e]' : 'bg-gray-100'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={subTextColor}>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <p className={`${textColor} text-lg mb-2`}>No proposals found</p>
+            <p className={`${subTextColor} text-sm`}>Try changing your filter or create a new proposal</p>
+          </DashboardBox>
+        )}
       </div>
     </main>
   );
