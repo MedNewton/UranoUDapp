@@ -123,7 +123,7 @@ function App() {
                 <img
                   src={astronautaImg}
                   alt="Astronauta"
-                  className="w-auto absolute right-0 top-2"
+                  className="hidden sm:block w-auto absolute right-0 top-2"
                   style={{
                     height: '140%',
                     objectFit: 'cover',
@@ -133,6 +133,11 @@ function App() {
                     scale: "1.35"
                   }}
                 />
+                <img
+                  src={astronautaImg}
+                  alt="Astronauta"
+                  className="block sm:hidden w-16 h-16 object-contain"
+                />
               </div>
             </DashboardBox>
           </Link>
@@ -141,7 +146,7 @@ function App() {
         {/* Pools Table Section */}
         <div className="w-full">
           {/* Table Header */}
-          <div className={`grid grid-cols-12 gap-4 px-6 py-3 mb-2 ${subTextColor}`}>
+          <div className={`hidden md:grid grid-cols-12 gap-4 px-6 py-3 mb-2 ${subTextColor}`}>
             <div className="col-span-2">
               <span className="text-xs font-conthrax uppercase tracking-wider leading-tight block">Company<br />Name</span>
             </div>
@@ -176,7 +181,7 @@ function App() {
             {poolData.map((pool) => (
               <Link to={`/pool/${pool.id}`} key={pool.id} className="block">
                 <DashboardBox variant="row" className="px-6 py-4">
-                  <div className="grid grid-cols-12 gap-4 items-center">
+                  <div className="hidden md:grid grid-cols-12 gap-4 items-center">
                     {/* Company with Logo */}
                     <div className="col-span-2 flex items-center gap-3">
                       <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-[#1a1a2e]/50 flex items-center justify-center">
@@ -239,6 +244,64 @@ function App() {
                       }`}>
                         {pool.status}
                       </span>
+                    </div>
+                  </div>
+                  <div className="md:hidden flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-[#1a1a2e]/50 flex items-center justify-center">
+                          <img
+                            src={pool.logo}
+                            alt="Company Logo"
+                            className="w-10 h-10 object-contain"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <p className={`text-sm font-conthrax ${textColor}`}>
+                            {pool.companyName}
+                          </p>
+                          <p className={`text-xs ${subTextColor}`}>
+                            {pool.operationName}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        pool.status === 'Open'
+                          ? 'bg-[#14EFC0]/20 text-[#14EFC0] border border-[#14EFC0]/30'
+                          : pool.status === 'Funding'
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                      }`}>
+                        {pool.status}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className={`text-[10px] font-conthrax uppercase tracking-wider ${subTextColor}`}>Asset Class</p>
+                        <p className={`text-sm ${textColor}`}>{pool.assetsClass}</p>
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-conthrax uppercase tracking-wider ${subTextColor}`}>RWA Value</p>
+                        <p className={`text-sm font-medium ${textColor}`}>{pool.valueLocked}</p>
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-conthrax uppercase tracking-wider ${subTextColor}`}>Return Rate</p>
+                        <p className="text-sm font-semibold text-[#14EFC0]">{pool.indicativeReturn}</p>
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-conthrax uppercase tracking-wider ${subTextColor}`}>uShare Supply</p>
+                        <p className="text-sm font-medium text-[#2dbdc5]">{pool.uNFTSupply}</p>
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-conthrax uppercase tracking-wider ${subTextColor}`}>uShare Price</p>
+                        <p className="text-sm font-medium text-[#2dbdc5]">{pool.uNFTPrice}</p>
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-conthrax uppercase tracking-wider ${subTextColor}`}>Time Left</p>
+                        <p className={`text-sm font-medium ${pool.timeLeft === '--' ? subTextColor : 'text-amber-400'}`}>
+                          {pool.timeLeft}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </DashboardBox>
