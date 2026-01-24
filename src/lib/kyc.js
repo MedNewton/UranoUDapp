@@ -1,7 +1,5 @@
-const KYC_API_BASE = "https://www.presale.uranoecosystem.com";
-
 export async function fetchKycInfo(address) {
-  const res = await fetch(`${KYC_API_BASE}/api/kyc-status?address=${address}`, {
+  const res = await fetch(`/api/kyc-status?address=${encodeURIComponent(address)}`, {
     cache: "no-store",
   });
   if (!res.ok) {
