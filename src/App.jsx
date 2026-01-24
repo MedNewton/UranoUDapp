@@ -118,7 +118,7 @@ function App() {
             <DashboardBox variant="card" className="p-6 h-full cursor-pointer overflow-hidden">
               <div className="flex items-center justify-between h-full min-h-[100px] relative">
                 <h2 className={`text-2xl font-conthrax ${subTextColor} group-hover:text-[#2dbdc5] transition-colors`}>
-                  My Portfolio
+                  My Profile
                 </h2>
                 <img
                   src={astronautaImg}

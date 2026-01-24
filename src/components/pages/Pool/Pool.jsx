@@ -3,10 +3,10 @@ import { useState } from 'react';
 import DashboardBox from '@/components/ui/DashboardBox';
 import KYCModal from '@/components/ui/KYCModal';
 import BuyModal from '@/components/ui/BuyModal';
+import ClaimModal from '@/components/ui/ClaimModal';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import logoBono from '@/assets/img/bono_logo.webp';
-import logoUrano from '@/assets/img/pool_logo.webp';
 
 // Import PDF files
 import presentazioneBook from '@/assets/pdf/presentazione_book.pdf';
@@ -17,12 +17,14 @@ import relazioneFattibilita from '@/assets/pdf/relazione_fattibilità.pdf';
 const Pool = () => {
   const { poolId } = useParams();
   const { isDark } = useTheme();
-  const { isConnected, walletAddress, toggleWalletConnection, kycModalShown, setKycShown } = useWallet();
+  const { isConnected, walletAddress, toggleWalletConnection } = useWallet();
   
   // Stati per controllare la visibilità delle varie finestre modali
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [hasCompletedKYC, setHasCompletedKYC] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // 'buy' or 'claim'
   
   const textColor = isDark ? 'text-gray-200' : 'text-gray-900';
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
@@ -258,22 +260,32 @@ Key financial indicators:
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <button
                   onClick={() => {
-                    if (hasCompletedKYC || kycModalShown) {
+                    if (hasCompletedKYC) {
                       setIsBuyModalOpen(true);
                     } else {
+                      setPendingAction('buy');
                       setIsKYCModalOpen(true);
-                      setKycShown();
                     }
                   }}
                   className="bg-[#14EFC0] text-black px-6 py-3 rounded-lg font-conthrax text-sm hover:bg-[#12d4ad] transition-colors"
                 >
                   Buy
                 </button>
-                <button className={`px-6 py-3 rounded-lg font-conthrax text-sm transition-colors ${
-                  isDark
-                    ? 'border border-[#2a2a4e] text-gray-300 hover:border-[#14EFC0] hover:text-[#14EFC0]'
-                    : 'border border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
-                }`}>
+                <button
+                  onClick={() => {
+                    if (hasCompletedKYC) {
+                      setIsClaimModalOpen(true);
+                    } else {
+                      setPendingAction('claim');
+                      setIsKYCModalOpen(true);
+                    }
+                  }}
+                  className={`px-6 py-3 rounded-lg font-conthrax text-sm transition-colors ${
+                    isDark
+                      ? 'border border-[#2a2a4e] text-gray-300 hover:border-[#14EFC0] hover:text-[#14EFC0]'
+                      : 'border border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
+                  }`}
+                >
                   Claim
                 </button>
               </div>
@@ -510,20 +522,35 @@ Key financial indicators:
       </div>
       
       {/* Finestra modale KYC */}
-      <KYCModal 
-        isOpen={isKYCModalOpen} 
-        onClose={() => setIsKYCModalOpen(false)}
+      <KYCModal
+        isOpen={isKYCModalOpen}
+        onClose={() => {
+          setIsKYCModalOpen(false);
+          setPendingAction(null);
+        }}
         onCompleted={() => {
           setIsKYCModalOpen(false);
           setHasCompletedKYC(true);
-          setIsBuyModalOpen(true);
+          // Open the appropriate modal based on which action triggered KYC
+          if (pendingAction === 'buy') {
+            setIsBuyModalOpen(true);
+          } else if (pendingAction === 'claim') {
+            setIsClaimModalOpen(true);
+          }
+          setPendingAction(null);
         }}
       />
-      
+
       {/* Finestra modale per l'acquisto */}
       <BuyModal
         isOpen={isBuyModalOpen}
         onClose={() => setIsBuyModalOpen(false)}
+      />
+
+      {/* Finestra modale per il claim */}
+      <ClaimModal
+        isOpen={isClaimModalOpen}
+        onClose={() => setIsClaimModalOpen(false)}
       />
     </>
   );
