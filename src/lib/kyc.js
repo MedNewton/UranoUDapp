@@ -3,6 +3,17 @@ export async function fetchKycInfo(address) {
     cache: "no-store",
   });
   if (!res.ok) {
+    let detail = "";
+    try {
+      detail = await res.text();
+    } catch {
+      // noop
+    }
+    console.warn("KYC status request failed", {
+      status: res.status,
+      statusText: res.statusText,
+      detail,
+    });
     return { verified: false, crypto_wallet_address: null, error: "http" };
   }
   const data = await res.json();
