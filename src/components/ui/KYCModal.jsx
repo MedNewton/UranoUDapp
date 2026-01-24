@@ -67,6 +67,7 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
   ];
 
   useEffect(() => {
+    console.log('KYCModal open', { isOpen, walletAddress });
     if (!isOpen || !walletAddress) {
       setCurrentStep(0);
       return;
@@ -76,9 +77,11 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
     setKycStatus((prev) => ({ ...prev, loading: true, mismatch: false }));
     setErrorMessage('');
 
+    console.log('KYCModal fetching status', { walletAddress });
     fetchKycAndCheckMismatch(walletAddress)
       .then(({ verified, personaWallet, mismatch }) => {
         if (cancelled) return;
+        console.log('KYCModal status response', { verified, personaWallet, mismatch });
         setKycStatus({
           verified,
           personaWallet,
@@ -94,6 +97,7 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
       })
       .catch(() => {
         if (cancelled) return;
+        console.log('KYCModal status error');
         setKycStatus({
           verified: false,
           personaWallet: null,
@@ -112,6 +116,14 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
   if (!isOpen) return null;
 
   const handleBegin = async () => {
+    console.log('KYCModal begin clicked', {
+      walletAddress,
+      isConnected,
+      loading: kycStatus.loading,
+      isLoading,
+      mismatch: kycStatus.mismatch,
+      verified: kycStatus.verified,
+    });
     if (!walletAddress || isLoading || kycStatus.loading) return;
 
     if (kycStatus.mismatch) {

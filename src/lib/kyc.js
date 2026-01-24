@@ -1,4 +1,5 @@
 export async function fetchKycInfo(address) {
+  console.log("KYC status request", { address });
   const res = await fetch(`/api/kyc-status?address=${encodeURIComponent(address)}`, {
     cache: "no-store",
   });
@@ -17,6 +18,12 @@ export async function fetchKycInfo(address) {
     return { verified: false, crypto_wallet_address: null, error: "http" };
   }
   const data = await res.json();
+  console.log("KYC status response", {
+    status: res.status,
+    url: res.url,
+    verified: Boolean(data?.verified),
+    personaWallet: data?.crypto_wallet_address ?? null,
+  });
   return {
     verified: Boolean(data.verified),
     crypto_wallet_address: data.crypto_wallet_address ?? null,
