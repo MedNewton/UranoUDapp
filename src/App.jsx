@@ -136,7 +136,15 @@ function App() {
                 <img
                   src={astronautaImg}
                   alt="Astronauta"
-                  className="block sm:hidden w-16 h-16 object-contain"
+                  className="block sm:hidden w-auto absolute right-0 top-9"
+                  style={{
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'top right',
+                    maxWidth: '40%',
+                    clipPath: 'inset(0 0 20% 0)',
+                    scale: "1.35"
+                  }}
                 />
               </div>
             </DashboardBox>
@@ -174,7 +182,7 @@ function App() {
           </div>
 
           {/* Table Rows */}
-          <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1" style={{
+          <div className="space-y-3 md:max-h-[55vh] md:overflow-y-auto md:pr-1" style={{
             scrollbarWidth: 'thin',
             scrollbarColor: isDark ? '#2dbdc5 #0a0a0f' : '#2dbdc5 #e5e7eb'
           }}>
