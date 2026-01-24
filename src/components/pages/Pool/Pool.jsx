@@ -28,6 +28,9 @@ const Pool = () => {
   
   const textColor = isDark ? 'text-gray-200' : 'text-gray-900';
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
+  const formattedWalletAddress = walletAddress
+    ? `${walletAddress.slice(0, 5)}.....${walletAddress.slice(-7)}`
+    : '';
 
   // Database di esempi di pool
   const poolsDatabase = {
@@ -251,7 +254,7 @@ Key financial indicators:
                   }
                 `}
               >
-                {isConnected ? `${walletAddress}` : 'Connect Wallet'}
+                {isConnected ? formattedWalletAddress : 'Connect Wallet'}
               </button>
             </DashboardBox>
 
