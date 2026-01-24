@@ -1,38 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
-import { fetchKycAndCheckMismatch, waitForKycStatus } from '@/lib/kyc';
-
-const PERSONA_SCRIPT_SRC = 'https://cdn.withpersona.com/dist/persona.min.js';
-let personaSdkPromise;
-
-const loadPersonaSdk = () => {
-  if (typeof window === 'undefined') return Promise.reject(new Error('window_missing'));
-  if (window.Persona) return Promise.resolve(window.Persona);
-  if (personaSdkPromise) return personaSdkPromise;
-
-  personaSdkPromise = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = PERSONA_SCRIPT_SRC;
-    script.async = true;
-    script.onload = () => resolve(window.Persona);
-    script.onerror = () => reject(new Error('persona_load_failed'));
-    document.head.appendChild(script);
-  });
-
-  return personaSdkPromise;
-};
-
-const getPersonaConfig = () => ({
-  templateId: import.meta.env.VITE_PERSONA_TEMPLATE_ID ?? import.meta.env.NEXT_PUBLIC_PERSONA_TEMPLATE_ID,
-  environmentId: import.meta.env.VITE_PERSONA_ENV_ID ?? import.meta.env.NEXT_PUBLIC_PERSONA_ENV_ID,
-});
+import { fetchKycAndCheckMismatch } from '@/lib/kyc';
+import VerifyIdentityModal from '@/components/ui/VerifyIdentityModal';
 
 const KYCModal = ({ isOpen, onClose, onCompleted }) => {
   const { isDark } = useTheme();
   const { isConnected, walletAddress } = useWallet();
   const [currentStep, setCurrentStep] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPersonaOpen, setIsPersonaOpen] = useState(false);
   const [kycStatus, setKycStatus] = useState({
     verified: false,
     personaWallet: null,
@@ -67,7 +43,6 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
   ];
 
   useEffect(() => {
-    console.log('KYCModal open', { isOpen, walletAddress });
     if (!isOpen || !walletAddress) {
       setCurrentStep(0);
       return;
@@ -77,11 +52,9 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
     setKycStatus((prev) => ({ ...prev, loading: true, mismatch: false }));
     setErrorMessage('');
 
-    console.log('KYCModal fetching status', { walletAddress });
     fetchKycAndCheckMismatch(walletAddress)
       .then(({ verified, personaWallet, mismatch }) => {
         if (cancelled) return;
-        console.log('KYCModal status response', { verified, personaWallet, mismatch });
         setKycStatus({
           verified,
           personaWallet,
@@ -97,7 +70,6 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
       })
       .catch(() => {
         if (cancelled) return;
-        console.log('KYCModal status error');
         setKycStatus({
           verified: false,
           personaWallet: null,
@@ -116,15 +88,7 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
   if (!isOpen) return null;
 
   const handleBegin = async () => {
-    console.log('KYCModal begin clicked', {
-      walletAddress,
-      isConnected,
-      loading: kycStatus.loading,
-      isLoading,
-      mismatch: kycStatus.mismatch,
-      verified: kycStatus.verified,
-    });
-    if (!walletAddress || isLoading || kycStatus.loading) return;
+    if (!walletAddress || kycStatus.loading) return;
 
     if (kycStatus.mismatch) {
       setErrorMessage(
@@ -141,64 +105,13 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
       }
       return;
     }
-
-    const { templateId, environmentId } = getPersonaConfig();
-    if (!templateId || !environmentId) {
-      setErrorMessage('Persona configuration is missing. Please contact support.');
-      return;
-    }
-
     setErrorMessage('');
-    setIsLoading(true);
-
-    try {
-      const Persona = await loadPersonaSdk();
-      const client = new Persona.Client({
-        templateId,
-        environmentId,
-        referenceId: walletAddress,
-        onReady: () => client.open(),
-        onComplete: async () => {
-          const verified = await waitForKycStatus(walletAddress, { tries: 12, delayMs: 2500 });
-          setKycStatus((prev) => ({
-            ...prev,
-            verified,
-            mismatch: false,
-          }));
-          setCurrentStep(verified ? 1 : 0);
-          setIsLoading(false);
-
-          if (verified) {
-            if (onCompleted) {
-              onCompleted();
-            } else {
-              onClose();
-            }
-          } else {
-            setErrorMessage(
-              'Verification submitted. We are still waiting for confirmation, please refresh later.'
-            );
-          }
-        },
-        onCancel: () => {
-          setIsLoading(false);
-        },
-        onError: () => {
-          setIsLoading(false);
-          setErrorMessage('Persona verification failed. Please try again.');
-        },
-      });
-
-      client.open();
-    } catch {
-      setIsLoading(false);
-      setErrorMessage('Unable to load Persona. Please try again later.');
-    }
+    setIsPersonaOpen(true);
   };
 
   const isActionDisabled =
     !kycStatus.verified &&
-    (!isConnected || kycStatus.loading || isLoading || kycStatus.mismatch);
+    (!isConnected || kycStatus.loading || isPersonaOpen || kycStatus.mismatch);
 
   const actionLabel = !isConnected
     ? 'Connect wallet to verify'
@@ -206,8 +119,8 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
     ? 'Checking status...'
     : kycStatus.verified
     ? 'Continue'
-    : isLoading
-    ? 'Opening Persona...'
+    : isPersonaOpen
+    ? 'Verification in progress'
     : kycStatus.mismatch
     ? 'Wallet mismatch'
     : 'Begin Verification';
@@ -288,14 +201,18 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
           {/* Steps */}
           <div className="space-y-4">
             {steps.map((step, index) => (
+              (() => {
+                const isStepComplete = index === 0 ? kycStatus.verified : currentStep > index;
+                const isStepActive = index === 0 ? !kycStatus.verified : currentStep === index;
+                return (
               <div
                 key={step.id}
                 className={`relative flex items-start gap-4 p-4 rounded-xl transition-all ${
-                  currentStep === index
+                  isStepActive
                     ? isDark
                       ? 'bg-[#14EFC0]/10 border border-[#14EFC0]/30'
                       : 'bg-teal-50 border border-teal-200'
-                    : currentStep > index
+                    : isStepComplete
                       ? isDark
                         ? 'bg-[#1a1a2e]/50 border border-[#14EFC0]/20'
                         : 'bg-gray-50 border border-teal-200'
@@ -306,9 +223,9 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
               >
                 {/* Step Icon */}
                 <div className={`shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${
-                  currentStep > index
+                  isStepComplete
                     ? 'bg-[#14EFC0] text-black'
-                    : currentStep === index
+                    : isStepActive
                       ? isDark
                         ? 'bg-[#14EFC0]/20 text-[#14EFC0]'
                         : 'bg-teal-100 text-teal-600'
@@ -316,11 +233,11 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
                         ? 'bg-[#2a2a4e] text-gray-500'
                         : 'bg-gray-200 text-gray-400'
                 }`}>
-                  {currentStep > index ? (
+                  {isStepComplete ? (
                     <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                  ) : currentStep === index && isLoading ? (
+                  ) : isStepActive && isPersonaOpen ? (
                     <svg className="animate-spin w-7 h-7" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -338,12 +255,12 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
                     }`}>
                       Step {step.id}
                     </span>
-                    {currentStep > index && (
+                    {isStepComplete && (
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#14EFC0]/20 text-[#14EFC0]">
                         Complete
                       </span>
                     )}
-                    {currentStep === index && isLoading && (
+                    {isStepActive && isPersonaOpen && (
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-600'
                       }`}>
@@ -352,7 +269,7 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
                     )}
                   </div>
                   <h3 className={`font-conthrax text-sm mb-1 ${
-                    currentStep >= index
+                    isStepActive || isStepComplete
                       ? isDark ? 'text-white' : 'text-gray-900'
                       : isDark ? 'text-gray-500' : 'text-gray-400'
                   }`}>
@@ -368,10 +285,12 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
                 {/* Connector Line */}
                 {index < steps.length - 1 && (
                   <div className={`absolute left-11 top-[72px] w-0.5 h-4 ${
-                    currentStep > index ? 'bg-[#14EFC0]' : isDark ? 'bg-[#2a2a4e]' : 'bg-gray-200'
+                    isStepComplete ? 'bg-[#14EFC0]' : isDark ? 'bg-[#2a2a4e]' : 'bg-gray-200'
                   }`} />
                 )}
               </div>
+                );
+              })()
             ))}
           </div>
 
@@ -417,13 +336,13 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
                 : 'bg-[#14EFC0] text-black hover:bg-[#12d4ad] hover:shadow-lg hover:shadow-[#14EFC0]/20'
             }`}
           >
-            {isLoading ? (
+            {isPersonaOpen ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Verifying...
+                Verification in progress...
               </span>
             ) : (
               actionLabel
@@ -446,6 +365,21 @@ const KYCModal = ({ isOpen, onClose, onCompleted }) => {
           </div>
         </div>
       </div>
+      <VerifyIdentityModal
+        isOpen={isPersonaOpen}
+        onClose={() => setIsPersonaOpen(false)}
+        onComplete={() => {
+          setKycStatus((prev) => ({ ...prev, verified: true, mismatch: false }));
+          setCurrentStep(1);
+          setIsPersonaOpen(false);
+          if (onCompleted) {
+            onCompleted();
+          } else {
+            onClose();
+          }
+        }}
+        walletAddress={walletAddress}
+      />
     </div>
   );
 };
