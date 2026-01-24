@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import DashboardBox from '@/components/ui/DashboardBox';
 import { useTheme } from '@/context/ThemeContext';
-import rocketImage from '@/assets/img/uStation.webp';
+import rocketImage from '@/assets/img/uStation.png';
 
 const UStation = () => {
   const { isDark } = useTheme();
