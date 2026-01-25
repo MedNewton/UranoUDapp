@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { parseUnits } from 'viem';
 import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
+import { useWallet } from '@/context/WalletContext';
 import { formatTokenAmount } from '@/utils/format';
 import uShareLogo from '@/assets/img/pool_logo.webp';
 import usdcLogo from '@/assets/img/usdc_logo.webp';
@@ -20,6 +21,7 @@ const BuyModal = ({
 }) => {
   const { isDark } = useTheme();
   const { addToast } = useToast();
+  const { balance, isConnected } = useWallet();
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -66,6 +68,7 @@ const BuyModal = ({
     () => formatTokenAmount(available ?? 0n, 18, 2),
     [available]
   );
+  const formattedUsdcBalance = isConnected ? balance.usdc : '0';
 
   const isPhaseActive = phase === 'presale' || phase === 'public';
   const canBuy = canTransact && isPhaseActive && (phase !== 'presale' || isEligible);
@@ -168,6 +171,11 @@ const BuyModal = ({
                   Phase: {phase === 'presale' ? 'Pre-Sale' : phase === 'public' ? 'Public Sale' : 'Inactive'}
                 </span>
               </div>
+            </div>
+            <div className="flex justify-end mt-2">
+              <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                Balance: {formattedUsdcBalance} USDC
+              </span>
             </div>
             </div>
           </div>
