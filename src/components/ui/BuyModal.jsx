@@ -1,21 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { parseUnits } from 'viem';
 import { useTheme } from '@/context/ThemeContext';
-import { usePortfolio } from '@/context/PortfolioContext';
+import { useToast } from '@/context/ToastContext';
+import { formatTokenAmount } from '@/utils/format';
 import uShareLogo from '@/assets/img/pool_logo.webp';
 import usdcLogo from '@/assets/img/usdc_logo.webp';
 
-const BuyModal = ({ isOpen, onClose }) => {
+const BuyModal = ({
+  isOpen,
+  onClose,
+  price,
+  symbol,
+  name,
+  phase,
+  isEligible,
+  canTransact,
+  available,
+  onBuy,
+}) => {
   const { isDark } = useTheme();
-  const { addProject } = usePortfolio();
+  const { addToast } = useToast();
   const [amount, setAmount] = useState('');
-  const [showConfirm, setShowConfirm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Reset modal when opened/closed
   useEffect(() => {
     if (isOpen) {
       setAmount('');
-      setShowConfirm(false);
       setIsProcessing(false);
     }
   }, [isOpen]);
@@ -23,26 +34,58 @@ const BuyModal = ({ isOpen, onClose }) => {
   // Handle amount change
   const handleAmountChange = (e) => {
     const value = e.target.value;
-    if (/^\d*\.?\d{0,2}$/.test(value)) {
+    if (/^\d*\.?\d{0,6}$/.test(value)) {
       setAmount(value);
-      setShowConfirm(parseFloat(value) > 0);
     }
   };
 
-  // Calculate received amount (conversion simulation)
-  const receivedAmount = parseFloat(amount) / 10 || 0;
-  const formattedReceived = receivedAmount.toFixed(2);
+  const usdcAmount = useMemo(() => {
+    try {
+      return parseUnits(amount || '0', 6);
+    } catch {
+      return 0n;
+    }
+  }, [amount]);
+
+  const uShareAmount = useMemo(() => {
+    if (!price || price <= 0n) return 0n;
+    return (usdcAmount * 1000000000000000000n) / price;
+  }, [price, usdcAmount]);
+
+  const formattedReceived = useMemo(
+    () => formatTokenAmount(uShareAmount, 18, 4),
+    [uShareAmount]
+  );
+
+  const formattedPrice = useMemo(
+    () => formatTokenAmount(price ?? 0n, 6, 4),
+    [price]
+  );
+
+  const formattedAvailable = useMemo(
+    () => formatTokenAmount(available ?? 0n, 18, 2),
+    [available]
+  );
+
+  const isPhaseActive = phase === 'presale' || phase === 'public';
+  const canBuy = canTransact && isPhaseActive && (phase !== 'presale' || isEligible);
+  const showConfirm = canBuy && usdcAmount > 0n && uShareAmount > 0n;
 
   // Handle purchase confirmation
   const handleConfirm = async () => {
+    if (!onBuy || !showConfirm) return;
     setIsProcessing(true);
-    // Simulate transaction delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    const addedProject = addProject();
-    setIsProcessing(false);
-    onClose();
-    if (addedProject) {
-      console.log(`Transaction completed: ${addedProject.name} added to portfolio`);
+    try {
+      await onBuy(uShareAmount);
+      onClose();
+    } catch (error) {
+      addToast({
+        type: 'error',
+        title: 'Purchase failed',
+        message: error?.message ?? 'Unable to submit purchase.',
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -64,7 +107,7 @@ const BuyModal = ({ isOpen, onClose }) => {
           isDark ? 'border-[#2a2a4e]' : 'border-gray-200'
         }`}>
           <h2 className={`text-lg font-conthrax ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Swap Tokens
+            Buy {symbol}
           </h2>
           <button
             onClick={onClose}
@@ -111,25 +154,23 @@ const BuyModal = ({ isOpen, onClose }) => {
                     : 'bg-white border border-gray-200 shadow-sm'
                 }`}>
                   <img src={usdcLogo || '/placeholder-usdc.webp'} alt="USDC" className="w-6 h-6 object-contain" />
-                  <span className={`font-conthrax text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>USDC</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center mt-3">
-                <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                  ≈ ${amount || '0.00'}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                    Balance: 1,250.00
+                  <span className={`font-conthrax text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    USDC
                   </span>
-                  <button className="text-xs font-conthrax text-[#14EFC0] hover:text-[#12d4ad] transition-colors">
-                    MAX
-                  </button>
                 </div>
+            </div>
+            <div className="flex justify-between items-center mt-3">
+              <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                ≈ ${amount || '0.00'}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Phase: {phase === 'presale' ? 'Pre-Sale' : phase === 'public' ? 'Public Sale' : 'Inactive'}
+                </span>
               </div>
             </div>
+            </div>
           </div>
-
           {/* Swap Arrow */}
           <div className="flex justify-center">
             <div className={`p-2 rounded-xl ${
@@ -165,7 +206,7 @@ const BuyModal = ({ isOpen, onClose }) => {
                     : 'bg-white border border-teal-300 shadow-sm'
                 }`}>
                   <img src={uShareLogo} alt="uShare" className="w-6 h-6 object-contain" />
-                  <span className={`font-conthrax text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>uShare</span>
+                  <span className={`font-conthrax text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{symbol}</span>
                 </div>
               </div>
               <div className="flex justify-between items-center mt-3">
@@ -173,7 +214,7 @@ const BuyModal = ({ isOpen, onClose }) => {
                   ≈ ${amount || '0.00'}
                 </span>
                 <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Balance: 0.00
+                  Available: {formattedAvailable}
                 </span>
               </div>
             </div>
@@ -187,7 +228,7 @@ const BuyModal = ({ isOpen, onClose }) => {
               Conversion Rate
             </span>
             <span className={`text-xs font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              1 uShare = 10 USDC
+              1 {symbol} = {formattedPrice} USDC
             </span>
           </div>
 
@@ -196,12 +237,10 @@ const BuyModal = ({ isOpen, onClose }) => {
             isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-50'
           }`}>
             <div className="flex justify-between">
-              <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Network Fee</span>
-              <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>~$0.05</span>
-            </div>
-            <div className="flex justify-between">
-              <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Slippage Tolerance</span>
-              <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>0.5%</span>
+              <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Eligibility</span>
+              <span className={`text-xs ${isEligible ? 'text-[#14EFC0]' : 'text-red-400'}`}>
+                {phase === 'presale' ? (isEligible ? 'Eligible' : 'Not eligible') : 'Not required'}
+              </span>
             </div>
           </div>
 
@@ -226,15 +265,15 @@ const BuyModal = ({ isOpen, onClose }) => {
                 Processing...
               </span>
             ) : showConfirm ? (
-              'Confirm Swap'
+              `Confirm Buy ${symbol}`
             ) : (
-              'Enter an amount'
+              canBuy ? 'Enter an amount' : 'Sale not available'
             )}
           </button>
 
           {/* Security Note */}
           <p className={`text-center text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-            Secured by smart contract • Instant settlement
+            Secured by smart contract • Settlement on-chain
           </p>
         </div>
       </div>

@@ -26,12 +26,18 @@ const Pool = () => {
   const { isDark } = useTheme();
   const { addToast } = useToast();
   const { isConnected, isCorrectNetwork, walletAddress, toggleWalletConnection } = useWallet();
-  const { getUShareInfo, buyOnPreSale, buyPublic, stakedAmount, checkPreSaleEligibility } = useUShare(walletAddress);
+  const {
+    getUShareInfo,
+    buyOnPreSale,
+    buyPublic,
+    preSaleDuration,
+    stakedAmount,
+    checkPreSaleEligibility,
+  } = useUShare(walletAddress);
   const { mutateAsync: sendTx } = useSendTransaction();
   const [uShareInfo, setUShareInfo] = useState(null);
   const [isLoadingShare, setIsLoadingShare] = useState(false);
   const [uShareError, setUShareError] = useState('');
-  const [buyAmount, setBuyAmount] = useState('');
   const [stakeAmount, setStakeAmount] = useState('');
   const [unstakeAmount, setUnstakeAmount] = useState('');
   
@@ -116,7 +122,7 @@ const Pool = () => {
 
   const uShareStatusMap = {
     0: 'Not Active',
-    1: 'Pre-Sale',
+    1: 'Sale Active',
     2: 'Sale Ended',
     3: 'Cashflow Active',
     4: 'Redistribution Active',
@@ -132,24 +138,25 @@ const Pool = () => {
   const preSaleEligible = uShareInfo
     ? checkPreSaleEligibility(uShareInfo.minUranoAmountForPreSale)
     : false;
+  const now = Date.now() / 1000;
 
-  const handleBuy = async (mode) => {
+  const preSaleEndsAt = uShareInfo && preSaleDuration
+    ? Number(uShareInfo.startTime) + Number(preSaleDuration)
+    : 0;
+  const isPreSaleWindow = uShareStatusValue === 1 && preSaleEndsAt > 0 && now < preSaleEndsAt;
+  const isPublicSaleWindow = uShareStatusValue === 1 && (!preSaleEndsAt || now >= preSaleEndsAt);
+  const salePhase = isPreSaleWindow ? 'presale' : (isPublicSaleWindow ? 'public' : 'inactive');
+
+  const handleBuy = async (mode, amount) => {
     if (!canTransact || !uShareInfo) return;
-    let amount;
-    try {
-      amount = parseTokenAmount(buyAmount, 18);
-    } catch {
-      return;
-    }
     if (!amount || amount <= 0n) return;
     const action = mode === 'presale' ? buyOnPreSale : buyPublic;
     await handleTransaction(action(offering.uShareId, amount, uSharePrice), () => {
       addToast({
         type: 'success',
         title: 'Purchase submitted',
-        message: `Bought ${buyAmount} uShares`,
+        message: `Bought ${formatTokenAmount(amount, 18, 4)} uShares`,
       });
-      setBuyAmount('');
     }, (error) => {
       addToast({ type: 'error', title: 'Purchase failed', message: error.message });
     });
@@ -486,7 +493,7 @@ Key financial indicators:
                   <div className="flex justify-between text-sm">
                     <span className={subTextColor}>Price</span>
                     <span className={textColor}>
-                      {formatTokenAmount(uSharePrice, 18, 4)} USDC
+                      {formatTokenAmount(uSharePrice, 6, 4)} USDC
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -501,56 +508,22 @@ Key financial indicators:
                       {formatTokenAmount(uShareBalance ?? 0n, 18, 2)} uShares
                     </span>
                   </div>
-                  {uShareStatusValue === 1 && (
-                    <div className={`text-xs ${subTextColor}`}>
+                  <div className="flex justify-between text-sm">
+                    <span className={subTextColor}>Phase</span>
+                    <span className={textColor}>
+                      {isPreSaleWindow ? 'Pre-Sale' : 'Public Sale'}
+                    </span>
+                  </div>
+                  {uShareStatusValue === 1 && isPreSaleWindow && (
+                    <div className={`text-xs ${preSaleEligible ? 'text-[#14EFC0]' : 'text-red-400'}`}>
                       Pre-sale access: {preSaleEligible ? 'Eligible' : 'Not eligible'}
                     </div>
                   )}
-                  <div>
-                    <input
-                      type="text"
-                      value={buyAmount}
-                      onChange={(e) => setBuyAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                      placeholder="Amount"
-                      disabled={!canTransact}
-                      className={`w-full py-2 px-3 rounded-lg text-sm focus:outline-none transition-all ${
-                        isDark
-                          ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
-                          : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
-                      }`}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handleBuy('presale')}
-                      disabled={!canTransact || uShareStatusValue !== 1 || !preSaleEligible}
-                      className={`py-2 rounded-lg text-sm font-conthrax transition-colors ${
-                        !canTransact || uShareInfo.status !== 1n || !preSaleEligible
-                          ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                          : 'bg-[#14EFC0] text-black hover:bg-[#12d4ad]'
-                      }`}
-                    >
-                      Pre-Sale
-                    </button>
-                    <button
-                      onClick={() => handleBuy('public')}
-                      disabled={!canTransact || uShareStatusValue !== 2}
-                      className={`py-2 rounded-lg text-sm font-conthrax transition-colors ${
-                        !canTransact || uShareInfo.status !== 2n
-                          ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                          : isDark
-                            ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      Public Sale
-                    </button>
-                  </div>
                 </div>
               )}
             </DashboardBox>
 
-            {uStakingContract && (
+            {uStakingContract && (uShareBalance ?? 0n) > 0n && (
               <DashboardBox variant="card" className="p-6">
                 <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-4`}>uShare Cashflow</h2>
                 <div className="space-y-4">
@@ -918,6 +891,14 @@ Key financial indicators:
       <BuyModal
         isOpen={isBuyModalOpen}
         onClose={() => setIsBuyModalOpen(false)}
+        price={uSharePrice}
+        symbol={offering?.symbol ?? 'uShare'}
+        name={offering?.name ?? 'uShare'}
+        phase={salePhase}
+        isEligible={preSaleEligible}
+        canTransact={canTransact}
+        available={uShareAvailable}
+        onBuy={(amount) => handleBuy(isPreSaleWindow ? 'presale' : 'public', amount)}
       />
 
       {/* Finestra modale per il claim */}
