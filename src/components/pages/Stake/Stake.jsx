@@ -22,6 +22,7 @@ const Stake = () => {
     stakedAmount,
     totalStaked,
     rewardPerSecond,
+    pendingRewards,
     canWithdraw,
     timeUntilWithdraw,
     stake,
@@ -37,7 +38,7 @@ const Stake = () => {
   
   const uranoToUsd = 0.17;
   const stakedRaw = stakedAmount ?? 0n;
-  const rewardsRaw = userInfo?.rewardEarned ?? 0n;
+  const rewardsRaw = pendingRewards ?? userInfo?.rewardEarned ?? 0n;
 
   const stakedDisplay = formatTokenAmount(stakedRaw, 18);
   const rewardsDisplay = formatTokenAmount(rewardsRaw, 18);
