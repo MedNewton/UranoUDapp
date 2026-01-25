@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardBox from '@/components/ui/DashboardBox';
 import { useTheme } from '@/context/ThemeContext';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useToast } from '@/context/ToastContext';
 import { useWallet } from '@/context/WalletContext';
+import { useStaking } from '@/hooks/useStaking';
+import { handleTransaction } from '@/utils/transactions';
+import { formatTokenAmount } from '@/utils/format';
+import { formatUnits } from 'viem';
 import logoUrano from '@/assets/img/pool_logo.webp';
 
 // Importazione delle immagini
@@ -15,32 +20,47 @@ import uranoBlackVertical from '@/assets/img/urano-black vetical.webp';
 const Portfolio = () => {
   const { isDark } = useTheme();
   const { activeProjects } = usePortfolio();
-  const { isConnected } = useWallet();
+  const { addToast } = useToast();
+  const { isConnected, walletAddress, balance } = useWallet();
+  const { stakedAmount, userInfo, claimRewards } = useStaking(walletAddress);
   const textColor = isDark ? 'text-gray-200' : 'text-gray-900';
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
+  const [hideBalances, setHideBalances] = useState(false);
 
-  // Stato per tracciare i valori del portfolio
-  const [netWorth, setNetWorth] = useState('0.00');
-  const [holdings, setHoldings] = useState('0.00');
-  const [staked, setStaked] = useState('0.00');
-  const [vested, setVested] = useState('0.00');
-  const [claimable, setClaimable] = useState('0.00');
+  const uranoPriceUsd = 0.17;
+  const holdingsRaw = balance.rawUrano ?? 0n;
+  const stakedRaw = stakedAmount ?? 0n;
+  const rewardsRaw = userInfo?.rewardEarned ?? 0n;
 
-  // Aggiorna i valori del portfolio quando vengono aggiunti progetti
-  useEffect(() => {
-    if (activeProjects.length > 0) {
-      // Calcola i valori in base ai progetti attivi
-      // Per ora impostiamo dei valori fissi basati sul numero di progetti
-      setHoldings('10.00');
-      setNetWorth('1,259.64');
-      
-      if (activeProjects.length >= 2) {
-        setStaked('0.00');
-        setVested('10.00');
-        setClaimable('10.00');
-      }
-    }
-  }, [activeProjects]);
+  const holdingsDisplay = formatTokenAmount(holdingsRaw, 18);
+  const stakedDisplay = formatTokenAmount(stakedRaw, 18);
+  const rewardsDisplay = formatTokenAmount(rewardsRaw, 18);
+
+  const netWorthDisplay = useMemo(() => {
+    if (!isConnected) return '0.00';
+    const total = holdingsRaw + stakedRaw + rewardsRaw;
+    const totalTokens = Number(formatUnits(total, 18));
+    const usd = totalTokens * uranoPriceUsd;
+    return usd.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [holdingsRaw, isConnected, rewardsRaw, stakedRaw]);
+
+  const masked = (value) => (hideBalances ? '****' : value);
+
+  const handleClaimRewards = async () => {
+    if (!isConnected || rewardsRaw <= 0n) return;
+    await handleTransaction(claimRewards(), () => {
+      addToast({
+        type: 'success',
+        title: 'Rewards claimed',
+        message: `Claimed ${rewardsDisplay} URANO`,
+      });
+    }, (error) => {
+      addToast({ type: 'error', title: 'Claim failed', message: error.message });
+    });
+  };
 
   // Mappa dei dati visivi per i progetti
   const projectData = {
@@ -77,11 +97,14 @@ const Portfolio = () => {
             <div className="relative">
               {/* Eye toggle button */}
               <div className="absolute top-0 right-0">
-                <button className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                <button
+                  onClick={() => setHideBalances((prev) => !prev)}
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                   isDark
                     ? 'bg-[#1a1a2e] border border-[#2a2a4e] hover:border-[#14EFC0]/50 text-gray-400 hover:text-[#14EFC0]'
                     : 'bg-gray-100 border border-gray-200 hover:border-teal-300 text-gray-500 hover:text-teal-600'
-                }`}>
+                }`}
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                     <circle cx="12" cy="12" r="3" />
@@ -93,8 +116,8 @@ const Portfolio = () => {
                 {/* Net Worth Section */}
                 <div className="mb-8">
                   <h2 className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>Net Worth</h2>
-                  <p className={`text-4xl font-bold ${textColor}`}>
-                    ${netWorth}
+                  <p className={`text-4xl font-bold ${textColor} break-words leading-tight`}>
+                    {masked(`$${netWorthDisplay}`)}
                   </p>
                 </div>
 
@@ -106,7 +129,9 @@ const Portfolio = () => {
                       <img src={logoUrano} alt="Urano Logo" className="w-5 h-auto object-contain" />
                       <span className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>URANO Holdings</span>
                     </div>
-                    <p className={`text-2xl font-bold ${textColor} mb-4`}>{holdings}</p>
+                    <p className={`text-2xl font-bold ${textColor} mb-4 break-words`}>
+                      {masked(holdingsDisplay)}
+                    </p>
 
                     <button className={`w-full px-4 py-2.5 rounded-lg flex items-center gap-2 justify-center text-sm font-conthrax transition-colors ${
                       isDark
@@ -129,7 +154,9 @@ const Portfolio = () => {
                       <img src={logoUrano} alt="Urano Logo" className="w-5 h-auto object-contain" />
                       <span className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>URANO Staked</span>
                     </div>
-                    <p className={`text-2xl font-bold ${textColor} mb-4`}>{staked}</p>
+                    <p className={`text-2xl font-bold ${textColor} mb-4 break-words`}>
+                      {masked(stakedDisplay)}
+                    </p>
 
                     <Link to="/stake" className={`w-full px-4 py-2.5 rounded-lg flex items-center gap-2 justify-center text-sm font-conthrax transition-colors ${
                       isDark
@@ -151,24 +178,34 @@ const Portfolio = () => {
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <img src={logoUrano} alt="Urano Logo" className="w-4 h-auto object-contain" />
-                          <span className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>Vested</span>
+                          <span className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>Rewards</span>
                         </div>
-                        <p className={`text-xl font-bold ${textColor}`}>{vested}</p>
+                        <p className={`text-xl font-bold ${textColor}`}>
+                          {masked(rewardsDisplay)}
+                        </p>
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <img src={logoUrano} alt="Urano Logo" className="w-4 h-auto object-contain" />
                           <span className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor}`}>Claimable</span>
                         </div>
-                        <p className="text-xl font-bold text-[#14EFC0]">{claimable}</p>
+                        <p className="text-xl font-bold text-[#14EFC0]">
+                          {masked(rewardsDisplay)}
+                        </p>
                       </div>
                     </div>
 
-                    <button className={`w-full px-4 py-2.5 rounded-lg flex items-center gap-2 justify-center text-sm font-conthrax transition-colors ${
-                      isDark
-                        ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}>
+                    <button
+                      onClick={handleClaimRewards}
+                      disabled={!isConnected || rewardsRaw <= 0n}
+                      className={`w-full px-4 py-2.5 rounded-lg flex items-center gap-2 justify-center text-sm font-conthrax transition-colors ${
+                        !isConnected || rewardsRaw <= 0n
+                          ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                          : isDark
+                            ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 2C9 7 6 9 2 12c4 3 7 5 10 10 3-5 6-7 10-10-4-3-7-5-10-10z" />
                         <circle cx="12" cy="12" r="3" />

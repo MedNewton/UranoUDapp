@@ -9,7 +9,7 @@ import logoUrano from '@/assets/img/logo_urano.webp';
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { isDark, toggleTheme } = useTheme();
-  const { isConnected, displayAddress } = useWallet();
+  const { isConnected, isCorrectNetwork, switchToRequiredChain, balance } = useWallet();
 
   const menuItems = [
     { name: 'Home', path: '/' },
@@ -39,7 +39,7 @@ const Header = () => {
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
               <img
-                className="h-24 w-auto"
+                className="h-14 sm:h-16 lg:h-24 w-auto"
                 src={logoUrano}
                 alt="Logo"
               />
@@ -85,6 +85,21 @@ const Header = () => {
 
           {/* Right side buttons */}
           <div className="hidden md:flex items-center ml-auto space-x-4">
+            {isConnected && (
+              <div className={`text-xs font-conthrax ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                URANO: <span className="text-[#2dbdc5]">{balance.urano}</span>
+                <span className="mx-2">|</span>
+                USDC: <span className="text-[#2dbdc5]">{balance.usdc}</span>
+              </div>
+            )}
+            {isConnected && !isCorrectNetwork && (
+              <button
+                onClick={switchToRequiredChain}
+                className="px-3 py-2 rounded-lg text-sm font-conthrax bg-amber-500 text-black hover:bg-amber-400 transition-colors"
+              >
+                Switch to Sepolia
+              </button>
+            )}
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
@@ -161,8 +176,8 @@ const Header = () => {
       </div>
 
       {/* Mobile Menu */}
-      <div className={`md:hidden ${isOpen ? 'block' : 'hidden'}`}>
-        <div className={`
+          <div className={`md:hidden ${isOpen ? 'block' : 'hidden'}`}>
+            <div className={`
           px-2 pt-2 pb-3 space-y-1
           ${isDark
             ? 'bg-black/80'
@@ -187,7 +202,22 @@ const Header = () => {
             </Link>
           ))}
           {/* Wallet Button - Mobile */}
-          <div className="px-2 pt-2">
+          <div className="px-2 pt-2 space-y-3">
+            {isConnected && (
+              <div className={`text-sm font-conthrax ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                URANO: <span className="text-[#2dbdc5]">{balance.urano}</span>
+                <span className="mx-2">|</span>
+                USDC: <span className="text-[#2dbdc5]">{balance.usdc}</span>
+              </div>
+            )}
+            {isConnected && !isCorrectNetwork && (
+              <button
+                onClick={switchToRequiredChain}
+                className="w-full px-4 py-2 rounded-lg text-lg font-conthrax bg-amber-500 text-black hover:bg-amber-400 transition-colors"
+              >
+                Switch to Sepolia
+              </button>
+            )}
             <ConnectButton
               client={client}
               chain={chain}

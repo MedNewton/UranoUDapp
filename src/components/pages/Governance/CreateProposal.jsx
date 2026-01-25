@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardBox from '@/components/ui/DashboardBox';
 import { useTheme } from '@/context/ThemeContext';
+import { useGovernance } from '@/hooks/useGovernance';
+import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
+import { handleTransaction } from '@/utils/transactions';
 
 const CreateProposal = () => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const textColor = isDark ? 'text-gray-200' : 'text-gray-900';
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
+  const { isConnected, isCorrectNetwork } = useWallet();
+  const { propose } = useGovernance();
+  const { addToast } = useToast();
   
   // Stati per i campi del form 
   const [title, setTitle] = useState('');
@@ -18,28 +25,59 @@ const CreateProposal = () => {
   const [benefits, setBenefits] = useState('');
   const [risks, setRisks] = useState('');
   const [alternatives, setAlternatives] = useState('');
+  const [proposalType, setProposalType] = useState('0');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Categorie disponibili
   const categories = ['Protocol', 'Treasury', 'Governance', 'Community', 'Technical', 'Other'];
 
   // Gestisce l'invio del form
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Qui andrebbe la logica per inviare la proposta alla blockchain
-    console.log({
-      title,
-      category,
-      description,
+
+    if (!isConnected || !isCorrectNetwork) {
+      addToast({
+        type: 'error',
+        title: 'Wallet not ready',
+        message: 'Connect your wallet and switch to Sepolia to submit.',
+      });
+      return;
+    }
+
+    const payload = [
+      `# ${title}`,
+      `Category: ${category}`,
+      '',
+      `Short Description: ${description}`,
+      '',
+      '## Summary',
       summary,
+      '',
+      '## Implementation',
       implementation,
+      '',
+      '## Benefits',
       benefits,
+      '',
+      '## Risks',
       risks,
-      alternatives
+      '',
+      '## Alternatives',
+      alternatives || 'None provided.',
+    ].join('\n');
+
+    setIsSubmitting(true);
+    await handleTransaction(propose(Number(proposalType), payload), () => {
+      addToast({
+        type: 'success',
+        title: 'Proposal submitted',
+        message: 'Your proposal was submitted to governance.',
+      });
+      navigate('/governance');
+    }, (error) => {
+      addToast({ type: 'error', title: 'Submission failed', message: error.message });
     });
-    
-    // Reindirizza alla pagina di governance
-    navigate('/governance');
+    setIsSubmitting(false);
   };
 
   return (
@@ -102,6 +140,27 @@ const CreateProposal = () => {
                   {categories.map((cat) => (
                     <option key={cat} value={cat} className={isDark ? 'bg-[#1a1a2e]' : 'bg-white'}>{cat}</option>
                   ))}
+                </select>
+              </div>
+
+              {/* Proposal Type */}
+              <div className="mb-6">
+                <label className={`block text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`} htmlFor="proposalType">
+                  Proposal Type *
+                </label>
+                <select
+                  id="proposalType"
+                  value={proposalType}
+                  onChange={(e) => setProposalType(e.target.value)}
+                  className={`w-full rounded-lg p-3 focus:outline-none transition-all ${
+                    isDark
+                      ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 focus:border-[#14EFC0]/60'
+                      : 'bg-gray-50 border border-gray-300 text-gray-900 focus:border-teal-500'
+                  }`}
+                  required
+                >
+                  <option value="0" className={isDark ? 'bg-[#1a1a2e]' : 'bg-white'}>Short (36h)</option>
+                  <option value="1" className={isDark ? 'bg-[#1a1a2e]' : 'bg-white'}>Long (7d)</option>
                 </select>
               </div>
 
@@ -268,9 +327,14 @@ const CreateProposal = () => {
                 </Link>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-[#14EFC0] text-black rounded-lg font-conthrax text-sm hover:bg-[#12d4ad] transition-colors"
+                  disabled={isSubmitting}
+                  className={`px-6 py-3 rounded-lg font-conthrax text-sm transition-colors ${
+                    isSubmitting
+                      ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                      : 'bg-[#14EFC0] text-black hover:bg-[#12d4ad]'
+                  }`}
                 >
-                  Submit Proposal
+                  {isSubmitting ? 'Submitting...' : 'Submit Proposal'}
                 </button>
               </div>
             </DashboardBox>

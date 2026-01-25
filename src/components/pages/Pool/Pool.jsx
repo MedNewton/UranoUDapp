@@ -1,11 +1,18 @@
 import { useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { prepareContractCall } from 'thirdweb';
+import { useReadContract, useSendTransaction } from 'thirdweb/react';
 import DashboardBox from '@/components/ui/DashboardBox';
 import KYCModal from '@/components/ui/KYCModal';
 import BuyModal from '@/components/ui/BuyModal';
 import ClaimModal from '@/components/ui/ClaimModal';
 import { useTheme } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import { useWallet } from '@/context/WalletContext';
+import { useUShare } from '@/hooks/useUShare';
+import { getUShareContract, getUStakingContract } from '@/config/contracts';
+import { formatTokenAmount, parseTokenAmount } from '@/utils/format';
+import { handleTransaction } from '@/utils/transactions';
 import logoBono from '@/assets/img/bono_logo.webp';
 
 // Import PDF files
@@ -17,7 +24,16 @@ import relazioneFattibilita from '@/assets/pdf/relazione_fattibilità.pdf';
 const Pool = () => {
   const { poolId } = useParams();
   const { isDark } = useTheme();
-  const { isConnected, walletAddress, toggleWalletConnection } = useWallet();
+  const { addToast } = useToast();
+  const { isConnected, isCorrectNetwork, walletAddress, toggleWalletConnection } = useWallet();
+  const { getUShareInfo, buyOnPreSale, buyPublic, stakedAmount, checkPreSaleEligibility } = useUShare(walletAddress);
+  const { mutateAsync: sendTx } = useSendTransaction();
+  const [uShareInfo, setUShareInfo] = useState(null);
+  const [isLoadingShare, setIsLoadingShare] = useState(false);
+  const [uShareError, setUShareError] = useState('');
+  const [buyAmount, setBuyAmount] = useState('');
+  const [stakeAmount, setStakeAmount] = useState('');
+  const [unstakeAmount, setUnstakeAmount] = useState('');
   
   // Stati per controllare la visibilità delle varie finestre modali
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
@@ -31,6 +47,190 @@ const Pool = () => {
   const formattedWalletAddress = walletAddress
     ? `${walletAddress.slice(0, 5)}.....${walletAddress.slice(-7)}`
     : '';
+  const canTransact = isConnected && isCorrectNetwork;
+  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+  const offerings = useMemo(() => {
+    const raw = import.meta.env.VITE_USHARE_OFFERINGS_JSON;
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const offering = useMemo(() => {
+    const index = Number(poolId) - 1;
+    if (Number.isFinite(index) && offerings[index]) return offerings[index];
+    return offerings[0] ?? null;
+  }, [offerings, poolId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      if (!offering) return;
+      setIsLoadingShare(true);
+      setUShareError('');
+      try {
+        const info = await getUShareInfo(offering.uShareId);
+        if (isMounted) setUShareInfo(info);
+      } catch {
+        if (isMounted) {
+          setUShareInfo(null);
+          setUShareError('Failed to load uShare data.');
+        }
+      } finally {
+        if (isMounted) setIsLoadingShare(false);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [getUShareInfo, offering]);
+
+  const uShareToken = offering?.uShareToken;
+  const uShareTokenContract = uShareToken ? getUShareContract(uShareToken) : null;
+  const safeUShareTokenContract = uShareTokenContract || getUShareContract(ZERO_ADDRESS);
+  const uStakingAddress = uShareInfo?.uStaking;
+  const uStakingContract = uStakingAddress && uStakingAddress !== ZERO_ADDRESS
+    ? getUStakingContract(uStakingAddress)
+    : null;
+  const safeUStakingContract = uStakingContract || getUStakingContract(ZERO_ADDRESS);
+
+  const { data: uShareBalance } = useReadContract({
+    contract: safeUShareTokenContract,
+    method: 'balanceOf',
+    params: [walletAddress],
+    enabled: Boolean(uShareTokenContract && walletAddress),
+  });
+
+  const { data: uStakingInfo } = useReadContract({
+    contract: safeUStakingContract,
+    method: 'userInfo',
+    params: [walletAddress],
+    enabled: Boolean(uStakingContract && walletAddress),
+  });
+
+  const uShareStatusMap = {
+    0: 'Not Active',
+    1: 'Pre-Sale',
+    2: 'Sale Ended',
+    3: 'Cashflow Active',
+    4: 'Redistribution Active',
+    5: 'Completed',
+  };
+
+  const uSharePrice = uShareInfo?.uSharePrice ?? 0n;
+  const uShareAvailable = uShareInfo
+    ? uShareInfo.uShareAmount - uShareInfo.uShareSold
+    : 0n;
+  const uShareStatusValue = uShareInfo ? Number(uShareInfo.status) : null;
+  const uShareStatus = uShareInfo ? uShareStatusMap[uShareStatusValue] || 'Unknown' : 'Unknown';
+  const preSaleEligible = uShareInfo
+    ? checkPreSaleEligibility(uShareInfo.minUranoAmountForPreSale)
+    : false;
+
+  const handleBuy = async (mode) => {
+    if (!canTransact || !uShareInfo) return;
+    let amount;
+    try {
+      amount = parseTokenAmount(buyAmount, 18);
+    } catch {
+      return;
+    }
+    if (!amount || amount <= 0n) return;
+    const action = mode === 'presale' ? buyOnPreSale : buyPublic;
+    await handleTransaction(action(offering.uShareId, amount, uSharePrice), () => {
+      addToast({
+        type: 'success',
+        title: 'Purchase submitted',
+        message: `Bought ${buyAmount} uShares`,
+      });
+      setBuyAmount('');
+    }, (error) => {
+      addToast({ type: 'error', title: 'Purchase failed', message: error.message });
+    });
+  };
+
+  const handleUShareStake = async () => {
+    if (!canTransact || !uStakingContract || !uShareTokenContract) return;
+    let amount;
+    try {
+      amount = parseTokenAmount(stakeAmount, 18);
+    } catch {
+      return;
+    }
+    if (!amount || amount <= 0n) return;
+    const approveTx = prepareContractCall({
+      contract: uShareTokenContract,
+      method: 'approve',
+      params: [uStakingAddress, amount],
+    });
+    await sendTx(approveTx);
+
+    const stakeTx = prepareContractCall({
+      contract: uStakingContract,
+      method: 'stake',
+      params: [amount],
+    });
+    await handleTransaction(sendTx(stakeTx), () => {
+      addToast({
+        type: 'success',
+        title: 'uShare staked',
+        message: `Staked ${stakeAmount} uShares`,
+      });
+      setStakeAmount('');
+    }, (error) => {
+      addToast({ type: 'error', title: 'Stake failed', message: error.message });
+    });
+  };
+
+  const handleUShareWithdraw = async () => {
+    if (!canTransact || !uStakingContract) return;
+    let amount;
+    try {
+      amount = parseTokenAmount(unstakeAmount, 18);
+    } catch {
+      return;
+    }
+    if (!amount || amount <= 0n) return;
+    const withdrawTx = prepareContractCall({
+      contract: uStakingContract,
+      method: 'withdraw',
+      params: [amount],
+    });
+    await handleTransaction(sendTx(withdrawTx), () => {
+      addToast({
+        type: 'success',
+        title: 'uShare withdrawn',
+        message: `Unstaked ${unstakeAmount} uShares`,
+      });
+      setUnstakeAmount('');
+    }, (error) => {
+      addToast({ type: 'error', title: 'Withdraw failed', message: error.message });
+    });
+  };
+
+  const handleUShareClaim = async () => {
+    if (!canTransact || !uStakingContract) return;
+    const claimTx = prepareContractCall({
+      contract: uStakingContract,
+      method: 'claimRewards',
+      params: [],
+    });
+    await handleTransaction(sendTx(claimTx), () => {
+      addToast({
+        type: 'success',
+        title: 'Cashflow claimed',
+        message: 'USDC rewards claimed.',
+      });
+    }, (error) => {
+      addToast({ type: 'error', title: 'Claim failed', message: error.message });
+    });
+  };
 
   // Database di esempi di pool
   const poolsDatabase = {
@@ -228,7 +428,7 @@ Key financial indicators:
       <div className="container mx-auto px-4 py-8 pt-24 min-h-screen">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Box sinistro fisso */}
-          <div className="lg:w-1/3 lg:sticky lg:top-24 lg:self-start">
+          <div className="lg:w-1/3 lg:sticky lg:top-24 lg:self-start space-y-6">
             <DashboardBox variant="card" className="p-6">
               <h1 className={`text-xl lg:text-2xl font-conthrax mb-4 ${textColor}`}>
                 {poolData.poolTitle || poolData.companyName}
@@ -257,6 +457,176 @@ Key financial indicators:
                 {isConnected ? formattedWalletAddress : 'Connect Wallet'}
               </button>
             </DashboardBox>
+
+            <DashboardBox variant="card" className="p-6">
+              <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-4`}>uShare Sale</h2>
+              {isLoadingShare && (
+                <p className={`text-sm ${subTextColor}`}>Loading uShare details...</p>
+              )}
+              {!isLoadingShare && !offering && (
+                <p className={`text-sm ${subTextColor}`}>No uShare offerings configured.</p>
+              )}
+              {!isLoadingShare && uShareError && (
+                <p className="text-sm text-red-400">{uShareError}</p>
+              )}
+              {!isLoadingShare && !uShareInfo && !uShareError && offering && (
+                <p className={`text-sm ${subTextColor}`}>uShare data not available.</p>
+              )}
+              {!canTransact && (
+                <p className={`text-xs ${subTextColor}`}>
+                  Connect your wallet and switch to Sepolia to transact.
+                </p>
+              )}
+              {uShareInfo && (
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span className={subTextColor}>Status</span>
+                    <span className={textColor}>{uShareStatus}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={subTextColor}>Price</span>
+                    <span className={textColor}>
+                      {formatTokenAmount(uSharePrice, 18, 4)} USDC
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={subTextColor}>Available</span>
+                    <span className={textColor}>
+                      {formatTokenAmount(uShareAvailable, 18, 2)} uShares
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={subTextColor}>Your Balance</span>
+                    <span className={textColor}>
+                      {formatTokenAmount(uShareBalance ?? 0n, 18, 2)} uShares
+                    </span>
+                  </div>
+                  {uShareStatusValue === 1 && (
+                    <div className={`text-xs ${subTextColor}`}>
+                      Pre-sale access: {preSaleEligible ? 'Eligible' : 'Not eligible'}
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      type="text"
+                      value={buyAmount}
+                      onChange={(e) => setBuyAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder="Amount"
+                      disabled={!canTransact}
+                      className={`w-full py-2 px-3 rounded-lg text-sm focus:outline-none transition-all ${
+                        isDark
+                          ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                          : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                      }`}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => handleBuy('presale')}
+                      disabled={!canTransact || uShareStatusValue !== 1 || !preSaleEligible}
+                      className={`py-2 rounded-lg text-sm font-conthrax transition-colors ${
+                        !canTransact || uShareInfo.status !== 1n || !preSaleEligible
+                          ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                          : 'bg-[#14EFC0] text-black hover:bg-[#12d4ad]'
+                      }`}
+                    >
+                      Pre-Sale
+                    </button>
+                    <button
+                      onClick={() => handleBuy('public')}
+                      disabled={!canTransact || uShareStatusValue !== 2}
+                      className={`py-2 rounded-lg text-sm font-conthrax transition-colors ${
+                        !canTransact || uShareInfo.status !== 2n
+                          ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                          : isDark
+                            ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Public Sale
+                    </button>
+                  </div>
+                </div>
+              )}
+            </DashboardBox>
+
+            {uStakingContract && (
+              <DashboardBox variant="card" className="p-6">
+                <h2 className={`text-lg font-conthrax uppercase tracking-wider ${subTextColor} mb-4`}>uShare Cashflow</h2>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span className={subTextColor}>Staked</span>
+                    <span className={textColor}>
+                      {formatTokenAmount(uStakingInfo?.stakedAmount ?? 0n, 18, 2)} uShares
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={subTextColor}>Rewards</span>
+                    <span className={textColor}>
+                      {formatTokenAmount(uStakingInfo?.rewardEarned ?? 0n, 6, 2)} USDC
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={stakeAmount}
+                    onChange={(e) => setStakeAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                    placeholder="Stake amount"
+                    className={`w-full py-2 px-3 rounded-lg text-sm focus:outline-none transition-all ${
+                      isDark
+                        ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                        : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                    }`}
+                  />
+                    <button
+                      onClick={handleUShareStake}
+                      disabled={!canTransact}
+                      className={`w-full py-2 rounded-lg text-sm font-conthrax transition-colors ${
+                        !canTransact
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : 'bg-[#14EFC0] text-black hover:bg-[#12d4ad]'
+                    }`}
+                  >
+                    Stake uShare
+                  </button>
+                  <input
+                    type="text"
+                    value={unstakeAmount}
+                    onChange={(e) => setUnstakeAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                    placeholder="Unstake amount"
+                    disabled={!canTransact}
+                    className={`w-full py-2 px-3 rounded-lg text-sm focus:outline-none transition-all ${
+                      isDark
+                        ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-200 placeholder-gray-500 focus:border-[#14EFC0]/60'
+                        : 'bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500'
+                    }`}
+                  />
+                  <button
+                    onClick={handleUShareWithdraw}
+                    disabled={!canTransact}
+                    className={`w-full py-2 rounded-lg text-sm font-conthrax transition-colors ${
+                      !canTransact
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : isDark
+                          ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Withdraw uShare
+                  </button>
+                  <button
+                    onClick={handleUShareClaim}
+                    disabled={!canTransact || (uStakingInfo?.rewardEarned ?? 0n) <= 0n}
+                    className={`w-full py-2 rounded-lg text-sm font-conthrax transition-colors ${
+                      !canTransact || (uStakingInfo?.rewardEarned ?? 0n) <= 0n
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : 'bg-amber-500 text-black hover:bg-amber-400'
+                    }`}
+                  >
+                    Claim USDC Rewards
+                  </button>
+                </div>
+              </DashboardBox>
+            )}
 
             {/* Pulsanti Buy e Claim (visibili solo quando il wallet è connesso) */}
             {isConnected && (
@@ -301,7 +671,7 @@ Key financial indicators:
             <DashboardBox variant="card" className="p-6">
               <div className="flex flex-col items-start">
                 <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>RWA Value</p>
-                <p className={`text-3xl lg:text-4xl font-bold ${textColor}`}>{poolData.tvl}</p>
+                <p className={`text-3xl lg:text-4xl font-bold ${textColor} break-words leading-tight`}>{poolData.tvl}</p>
               </div>
             </DashboardBox>
 
@@ -311,7 +681,7 @@ Key financial indicators:
                 {/* Top Left */}
                 <div className="sm:pb-6 sm:pr-6 sm:border-r sm:border-b border-[#1a1a2e]">
                   <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-2`}>Projected RWA Value at Maturity</p>
-                  <p className={`text-xl lg:text-2xl font-semibold ${textColor}`}>
+                  <p className={`text-xl lg:text-2xl font-semibold ${textColor} break-words`}>
                     {poolData.interest}
                   </p>
                 </div>

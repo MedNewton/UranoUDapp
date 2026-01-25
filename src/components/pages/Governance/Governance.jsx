@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardBox from '@/components/ui/DashboardBox';
 import { useTheme } from '@/context/ThemeContext';
+import { useGovernance } from '@/hooks/useGovernance';
+import { formatDate } from '@/utils/format';
 
 const Governance = () => {
   const { isDark } = useTheme();
@@ -10,55 +12,82 @@ const Governance = () => {
   
   // Stato per il filtro attivo
   const [activeFilter, setActiveFilter] = useState('all');
+  const { proposalCount, getAllProposals } = useGovernance();
+  const [proposals, setProposals] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
-  // Dati di esempio per le proposte di governance
-  const proposals = [
-    {
-      id: 1,
-      title: 'Upgrade Treasury Management',
-      description: 'Proposal to upgrade the treasury management system to improve yield generation and risk management.',
-      status: 'active',
-      votes: { for: 65, against: 35 },
-      endDate: '2025-05-15',
-      creator: '0x71C...a1B2',
-      category: 'Treasury'
-    },
-    {
-      id: 2,
-      title: 'Add New Collateral Type',
-      description: 'Add support for WBTC as collateral with a 150% collateralization ratio.',
-      status: 'passed',
-      votes: { for: 82, against: 18 },
-      endDate: '2025-04-10',
-      creator: '0x94D...c7F3',
-      category: 'Protocol'
-    },
-    {
-      id: 3,
-      title: 'Reduce Governance Quorum',
-      description: 'Reduce the minimum quorum required for governance votes from 10% to 5% of total supply.',
-      status: 'rejected',
-      votes: { for: 42, against: 58 },
-      endDate: '2025-04-05',
-      creator: '0x3A7...e9D4',
-      category: 'Governance'
-    },
-    {
-      id: 4,
-      title: 'Increase Developer Fund',
-      description: 'Increase the developer fund allocation from 5% to 7% of protocol fees to support ongoing development.',
-      status: 'pending',
-      votes: { for: 0, against: 0 },
-      endDate: '2025-05-30',
-      creator: '0x8B2...f5E6',
-      category: 'Treasury'
-    },
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      setIsLoading(true);
+      setLoadError('');
+      try {
+        const data = await getAllProposals();
+        if (isMounted) {
+          setProposals(data ?? []);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError('Failed to load proposals.');
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [proposalCount, getAllProposals]);
+
+  const getStatus = (proposal) => {
+    const now = Date.now() / 1000;
+    const start = Number(proposal.startTime ?? 0n);
+    const end = Number(proposal.endTime ?? 0n);
+    const result = Number(proposal.result ?? 0);
+
+    if (now < start) return 'pending';
+    if (now <= end) return 'active';
+    if (result === 1) return 'passed';
+    if (result === 2) return 'rejected';
+    return 'pending';
+  };
+
+  const getVotePercentages = (proposal) => {
+    const votesFor = proposal.votesFor ?? 0n;
+    const votesAgainst = proposal.votesAgainst ?? 0n;
+    const total = votesFor + votesAgainst;
+    if (total === 0n) return { for: 0, against: 0 };
+    const forPct = Number((votesFor * 10000n) / total) / 100;
+    const againstPct = Math.max(0, 100 - forPct);
+    return { for: forPct, against: againstPct };
+  };
+
+  const normalizedProposals = useMemo(
+    () =>
+      proposals.map((proposal) => {
+        const status = getStatus(proposal);
+        const votes = getVotePercentages(proposal);
+        const description = proposal.description || '';
+        const title = description.split('\n')[0] || `Proposal #${proposal.id}`;
+        return {
+          ...proposal,
+          status,
+          votes,
+          title,
+          description,
+          endDate: formatDate(proposal.endTime),
+          category: proposal.proposalType === 1 ? 'Long' : 'Short',
+        };
+      }),
+    [proposals]
+  );
 
   // Filtra le proposte in base al filtro attivo
-  const filteredProposals = activeFilter === 'all' 
-    ? proposals 
-    : proposals.filter(proposal => proposal.status === activeFilter);
+  const filteredProposals = activeFilter === 'all'
+    ? normalizedProposals
+    : normalizedProposals.filter(proposal => proposal.status === activeFilter);
 
   // Funzione per ottenere il colore dello stato
   const getStatusColor = (status) => {
@@ -92,12 +121,12 @@ const Governance = () => {
           <div className="flex gap-4">
             <div className={`px-5 py-3 rounded-lg text-center ${isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-100'}`}>
               <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Total Proposals</p>
-              <p className={`text-2xl font-bold ${textColor}`}>{proposals.length}</p>
+              <p className={`text-2xl font-bold ${textColor}`}>{normalizedProposals.length}</p>
             </div>
             <div className={`px-5 py-3 rounded-lg text-center ${isDark ? 'bg-[#14EFC0]/10 border border-[#14EFC0]/20' : 'bg-teal-50 border border-teal-200'}`}>
               <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Active Proposals</p>
               <p className="text-2xl font-bold text-[#14EFC0]">
-                {proposals.filter(p => p.status === 'active').length}
+                {normalizedProposals.filter(p => p.status === 'active').length}
               </p>
             </div>
           </div>
@@ -142,6 +171,16 @@ const Governance = () => {
 
         {/* Elenco proposte */}
         <div className="space-y-4">
+          {isLoading && (
+            <DashboardBox variant="card" className="p-6">
+              <p className={`${subTextColor} text-sm`}>Loading proposals...</p>
+            </DashboardBox>
+          )}
+          {loadError && (
+            <DashboardBox variant="card" className="p-6">
+              <p className="text-sm text-red-400">{loadError}</p>
+            </DashboardBox>
+          )}
           {filteredProposals.map((proposal) => (
             <Link to={`/governance/${proposal.id}`} key={proposal.id} className="block">
               <DashboardBox variant="row" className="p-6">
@@ -177,14 +216,14 @@ const Governance = () => {
                   <div className={`flex flex-wrap justify-between items-center gap-4 pt-4 border-t ${isDark ? 'border-[#1a1a2e]' : 'border-gray-200'}`}>
                     <div className="flex items-center gap-6">
                       <div>
-                        <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Category</p>
+                        <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Type</p>
                         <span className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-[#1a1a2e] text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
                           {proposal.category}
                         </span>
                       </div>
                       <div>
-                        <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Created by</p>
-                        <p className={`text-sm font-mono ${textColor}`}>{proposal.creator}</p>
+                        <p className={`text-xs font-conthrax uppercase tracking-wider ${subTextColor} mb-1`}>Proposal ID</p>
+                        <p className={`text-sm font-mono ${textColor}`}>#{proposal.id}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -199,7 +238,7 @@ const Governance = () => {
         </div>
 
         {/* Empty state */}
-        {filteredProposals.length === 0 && (
+        {!isLoading && !loadError && filteredProposals.length === 0 && (
           <DashboardBox variant="card" className="p-12 text-center">
             <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-[#1a1a2e]' : 'bg-gray-100'}`}>
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={subTextColor}>

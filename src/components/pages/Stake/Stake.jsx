@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
+import { formatUnits } from 'viem';
 import DashboardBox from '@/components/ui/DashboardBox';
 import { useTheme } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
+import { useWallet } from '@/context/WalletContext';
+import { useStaking } from '@/hooks/useStaking';
+import { calculateAPR } from '@/utils/calculations';
+import { formatDuration, formatTokenAmount, parseTokenAmount } from '@/utils/format';
+import { handleTransaction } from '@/utils/transactions';
 import poolLogo from '@/assets/img/pool_logo.webp';
 
 const Stake = () => {
@@ -8,88 +15,99 @@ const Stake = () => {
   const textColor = isDark ? 'text-gray-200' : 'text-gray-900';
   const subTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
 
-  // Stato per gestire gli input e i valori visualizzati
+  const { addToast } = useToast();
+  const { walletAddress, isConnected, isCorrectNetwork, balance } = useWallet();
+  const {
+    userInfo,
+    stakedAmount,
+    totalStaked,
+    rewardPerSecond,
+    canWithdraw,
+    timeUntilWithdraw,
+    stake,
+    withdraw,
+    claimRewards,
+  } = useStaking(walletAddress);
+
+  const canTransact = isConnected && isCorrectNetwork;
+
+  // Stato per gestire gli input
   const [stakeInput, setStakeInput] = useState('');
   const [unstakeInput, setUnstakeInput] = useState('');
-  const [claimInput, setClaimInput] = useState('');
-  const [stakedAmount, setStakedAmount] = useState('0.00');
-  const [dollarValue, setDollarValue] = useState('0.00');
-  const [userBalance, setUserBalance] = useState('185.77');
-  const [claimableRewards, setClaimableRewards] = useState('12.45');
-  const [rewardsDollarValue, setRewardsDollarValue] = useState('0.00');
   
-  // Costante per la conversione URANO -> USD (valore ipotetico)
   const uranoToUsd = 0.17;
-  
-  // Funzione per aggiornare il valore in dollari quando cambia lo stakedAmount o claimableRewards
-  useEffect(() => {
-    const amount = parseFloat(stakedAmount) || 0;
-    const rewardsAmount = parseFloat(claimableRewards) || 0;
-    setDollarValue((amount * uranoToUsd).toFixed(2));
-    setRewardsDollarValue((rewardsAmount * uranoToUsd).toFixed(2));
-  }, [stakedAmount, claimableRewards]);
-  
-  // Funzione per gestire lo stake
-  const handleStake = () => {
-    if (stakeInput && !isNaN(parseFloat(stakeInput))) {
-      const inputValue = parseFloat(stakeInput);
-      const balance = parseFloat(userBalance);
-      
-      // Controllo che l'utente abbia abbastanza balance
-      if (inputValue <= balance) {
-        // Aggiorna lo staked amount
-        const currentStaked = parseFloat(stakedAmount) || 0;
-        setStakedAmount((currentStaked + inputValue).toFixed(2));
-        
-        // Aggiorna il balance dell'utente
-        setUserBalance((balance - inputValue).toFixed(2));
-        
-        // Resetta il campo di input
-        setStakeInput('');
-      }
+  const stakedRaw = stakedAmount ?? 0n;
+  const rewardsRaw = userInfo?.rewardEarned ?? 0n;
+
+  const stakedDisplay = formatTokenAmount(stakedRaw, 18);
+  const rewardsDisplay = formatTokenAmount(rewardsRaw, 18);
+
+  const stakedUsd = useMemo(() => {
+    const amount = Number(formatUnits(stakedRaw, 18));
+    return (amount * uranoToUsd).toFixed(2);
+  }, [stakedRaw]);
+
+  const rewardsUsd = useMemo(() => {
+    const amount = Number(formatUnits(rewardsRaw, 18));
+    return (amount * uranoToUsd).toFixed(2);
+  }, [rewardsRaw]);
+
+  const apr = useMemo(() => {
+    return calculateAPR(rewardPerSecond ?? 0n, totalStaked ?? 0n);
+  }, [rewardPerSecond, totalStaked]);
+
+  const safeParseAmount = (value) => {
+    try {
+      return parseTokenAmount(value, 18);
+    } catch {
+      return 0n;
     }
   };
-  
-  // Funzione per gestire l'unstake
-  const handleUnstake = () => {
-    if (unstakeInput && !isNaN(parseFloat(unstakeInput))) {
-      const inputValue = parseFloat(unstakeInput);
-      const currentStaked = parseFloat(stakedAmount) || 0;
-      
-      // Controllo che l'utente abbia abbastanza staked
-      if (inputValue <= currentStaked) {
-        // Aggiorna lo staked amount
-        setStakedAmount((currentStaked - inputValue).toFixed(2));
-        
-        // Aggiorna il balance dell'utente
-        const balance = parseFloat(userBalance);
-        setUserBalance((balance + inputValue).toFixed(2));
-        
-        // Resetta il campo di input
-        setUnstakeInput('');
-      }
-    }
+
+  const handleStake = async () => {
+    if (!canTransact) return;
+    const amount = safeParseAmount(stakeInput);
+    if (amount <= 0n) return;
+    await handleTransaction(stake(amount), () => {
+      addToast({
+        type: "success",
+        title: "Stake submitted",
+        message: `Staked ${stakeInput} URANO`,
+      });
+      setStakeInput('');
+    }, (error) => {
+      addToast({ type: "error", title: "Stake failed", message: error.message });
+    });
   };
-  
-  // Funzione per gestire il claim delle rewards
-  const handleClaim = () => {
-    if (claimInput && !isNaN(parseFloat(claimInput))) {
-      const inputValue = parseFloat(claimInput);
-      const currentRewards = parseFloat(claimableRewards) || 0;
-      
-      // Controllo che l'utente abbia abbastanza rewards da riscattare
-      if (inputValue <= currentRewards) {
-        // Aggiorna le rewards disponibili
-        setClaimableRewards((currentRewards - inputValue).toFixed(2));
-        
-        // Aggiorna il balance dell'utente
-        const balance = parseFloat(userBalance);
-        setUserBalance((balance + inputValue).toFixed(2));
-        
-        // Resetta il campo di input
-        setClaimInput('');
-      }
-    }
+
+  const handleUnstake = async () => {
+    if (!canTransact || !canWithdraw) return;
+    const amount = safeParseAmount(unstakeInput);
+    if (amount <= 0n) return;
+    await handleTransaction(withdraw(amount), () => {
+      addToast({
+        type: "success",
+        title: "Withdraw submitted",
+        message: `Unstaked ${unstakeInput} URANO`,
+      });
+      setUnstakeInput('');
+    }, (error) => {
+      addToast({ type: "error", title: "Withdraw failed", message: error.message });
+    });
+  };
+
+  const handleClaim = async () => {
+    if (!canTransact) return;
+    if (rewardsRaw <= 0n) return;
+    await handleTransaction(claimRewards(), () => {
+      addToast({
+        type: "success",
+        title: "Rewards claimed",
+        message: `Claimed ${rewardsDisplay} URANO`,
+      });
+    }, (error) => {
+      addToast({ type: "error", title: "Claim failed", message: error.message });
+    });
   };
 
   return (
@@ -109,7 +127,7 @@ const Stake = () => {
             {/* Staking APY */}
             <div className="p-6">
               <h2 className={`text-sm font-conthrax uppercase tracking-wider ${subTextColor} mb-3`}>Staking APY</h2>
-              <p className="text-3xl font-bold text-[#14EFC0]">28%</p>
+              <p className="text-3xl font-bold text-[#14EFC0]">{apr.toFixed(2)}%</p>
             </div>
 
             {/* $URANO Price */}
@@ -121,7 +139,9 @@ const Stake = () => {
             {/* Total Staked $URANO */}
             <div className="p-6">
               <h2 className={`text-sm font-conthrax uppercase tracking-wider ${subTextColor} mb-3`}>Total Staked $URANO</h2>
-              <p className={`text-3xl font-bold ${textColor}`}>21,791,758.84</p>
+              <p className={`text-3xl font-bold ${textColor}`}>
+                {formatTokenAmount(totalStaked ?? 0n, 18, 2)}
+              </p>
             </div>
           </div>
         </DashboardBox>
@@ -135,10 +155,10 @@ const Stake = () => {
 
               <div className="mb-6">
                 <div className="flex items-baseline gap-2 mb-1">
-                  <p className={`text-4xl font-bold ${textColor}`}>{stakedAmount}</p>
+                  <p className={`text-4xl font-bold ${textColor} break-words leading-tight`}>{stakedDisplay}</p>
                   <span className={`text-lg ${subTextColor}`}>URANO</span>
                 </div>
-                <p className={`text-sm ${subTextColor}`}>${dollarValue}</p>
+                <p className={`text-sm ${subTextColor}`}>${stakedUsd}</p>
               </div>
 
               <div className={`flex items-center gap-2 mb-6 px-3 py-2 rounded-lg ${isDark ? 'bg-[#1a1a2e]/50' : 'bg-gray-100'}`}>
@@ -149,8 +169,15 @@ const Stake = () => {
                     <path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path>
                   </svg>
                 </div>
-                <p className={`text-sm ${textColor}`}>Wallet Balance: <span className="text-[#2dbdc5] font-medium">{userBalance} URANO</span></p>
+                <p className={`text-sm ${textColor}`}>
+                  Wallet Balance: <span className="text-[#2dbdc5] font-medium">{isConnected ? balance.urano : "--"} URANO</span>
+                </p>
               </div>
+              {isConnected && !canWithdraw && (
+                <p className={`text-xs ${subTextColor} mb-4`}>
+                  Unlocks in {formatDuration(timeUntilWithdraw)}
+                </p>
+              )}
 
               <div className="mt-auto space-y-3">
                 <div className="relative">
@@ -159,6 +186,7 @@ const Stake = () => {
                     value={stakeInput}
                     onChange={(e) => setStakeInput(e.target.value.replace(/[^0-9.]/g, ''))}
                     placeholder="Enter Amount"
+                    disabled={!canTransact}
                     className={`w-full py-3 px-4 pr-24 rounded-lg font-conthrax text-sm focus:outline-none transition-all ${
                       isDark
                         ? 'bg-[#14EFC0]/10 border border-[#14EFC0]/30 text-[#14EFC0] placeholder-[#14EFC0]/50 focus:border-[#14EFC0]/60'
@@ -167,7 +195,12 @@ const Stake = () => {
                   />
                   <button
                     onClick={handleStake}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#14EFC0] text-black px-4 py-1.5 rounded-md font-conthrax text-xs hover:bg-[#12d4ad] transition-colors"
+                    disabled={!canTransact}
+                    className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-md font-conthrax text-xs transition-colors ${
+                      !canTransact
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : 'bg-[#14EFC0] text-black hover:bg-[#12d4ad]'
+                    }`}
                   >
                     STAKE
                   </button>
@@ -179,6 +212,7 @@ const Stake = () => {
                     value={unstakeInput}
                     onChange={(e) => setUnstakeInput(e.target.value.replace(/[^0-9.]/g, ''))}
                     placeholder="Enter Amount"
+                    disabled={!canTransact}
                     className={`w-full py-3 px-4 pr-28 rounded-lg font-conthrax text-sm focus:outline-none transition-all ${
                       isDark
                         ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-300 placeholder-gray-500 focus:border-[#3a3a5e]'
@@ -187,10 +221,13 @@ const Stake = () => {
                   />
                   <button
                     onClick={handleUnstake}
+                    disabled={!canTransact || !canWithdraw}
                     className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-md font-conthrax text-xs transition-colors ${
-                      isDark
-                        ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      !canTransact || !canWithdraw
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : isDark
+                          ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     UNSTAKE
@@ -207,10 +244,10 @@ const Stake = () => {
 
               <div className="mb-6">
                 <div className="flex items-baseline gap-2 mb-1">
-                  <p className="text-4xl font-bold text-[#14EFC0]">{claimableRewards}</p>
+                  <p className="text-4xl font-bold text-[#14EFC0] break-words leading-tight">{rewardsDisplay}</p>
                   <span className={`text-lg ${subTextColor}`}>URANO</span>
                 </div>
-                <p className={`text-sm ${subTextColor}`}>${rewardsDollarValue}</p>
+                <p className={`text-sm ${subTextColor}`}>${rewardsUsd}</p>
               </div>
 
               <div className={`flex-1 flex items-center justify-center mb-6 rounded-lg ${isDark ? 'bg-[#1a1a2e]/30' : 'bg-gray-50'}`}>
@@ -221,24 +258,26 @@ const Stake = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    value={claimInput}
-                    onChange={(e) => setClaimInput(e.target.value.replace(/[^0-9.]/g, ''))}
-                    placeholder="Enter Amount"
-                    className={`w-full py-3 px-4 pr-24 rounded-lg font-conthrax text-sm focus:outline-none transition-all ${
+                    value={rewardsDisplay}
+                    readOnly
+                    className={`w-full py-3 px-4 pr-28 rounded-lg font-conthrax text-sm focus:outline-none transition-all ${
                       isDark
-                        ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-300 placeholder-gray-500 focus:border-[#3a3a5e]'
-                        : 'bg-gray-50 border border-gray-300 text-gray-700 placeholder-gray-400 focus:border-gray-400'
+                        ? 'bg-[#1a1a2e]/50 border border-[#2a2a4e] text-gray-300'
+                        : 'bg-gray-50 border border-gray-300 text-gray-700'
                     }`}
                   />
                   <button
                     onClick={handleClaim}
+                    disabled={!canTransact || rewardsRaw <= 0n}
                     className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-md font-conthrax text-xs transition-colors ${
-                      isDark
-                        ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      !canTransact || rewardsRaw <= 0n
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : isDark
+                          ? 'bg-[#2a2a4e] text-gray-300 hover:bg-[#3a3a5e]'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
-                    CLAIM
+                    CLAIM ALL
                   </button>
                 </div>
               </div>

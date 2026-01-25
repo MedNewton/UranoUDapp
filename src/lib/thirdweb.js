@@ -1,13 +1,13 @@
 import { createThirdwebClient } from "thirdweb";
-import { arbitrumSepolia } from "thirdweb/chains";
+import { sepolia } from "thirdweb/chains";
 
 // Create the thirdweb client
 export const client = createThirdwebClient({
   clientId: import.meta.env.VITE_THIRDWEB_CLIENT_ID,
 });
 
-// Define the chain (Arbitrum Sepolia)
-export const chain = arbitrumSepolia;
+// Define the chain (Ethereum Sepolia)
+export const chain = sepolia;
 
 // Supported wallets configuration
 export const wallets = [

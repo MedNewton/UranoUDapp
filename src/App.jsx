@@ -106,7 +106,7 @@ function App() {
                 </span>
               </div>
               <div className="mt-auto">
-                <p className={`text-4xl font-bold ${textColor}`}>
+                <p className={`text-4xl font-bold ${textColor} break-words leading-tight`}>
                   $89,002,751.00
                 </p>
               </div>
@@ -264,11 +264,11 @@ function App() {
                             className="w-10 h-10 object-contain"
                           />
                         </div>
-                        <div className="flex flex-col">
-                          <p className={`text-sm font-conthrax ${textColor}`}>
+                        <div className="flex flex-col min-w-0">
+                          <p className={`text-sm font-conthrax ${textColor} break-words`}>
                             {pool.companyName}
                           </p>
-                          <p className={`text-xs ${subTextColor}`}>
+                          <p className={`text-xs ${subTextColor} break-words`}>
                             {pool.operationName}
                           </p>
                         </div>

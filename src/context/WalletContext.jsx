@@ -1,6 +1,15 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { useActiveAccount, useActiveWallet, useDisconnect } from "thirdweb/react";
-import { client } from '@/lib/thirdweb';
+import {
+  useActiveAccount,
+  useActiveWallet,
+  useActiveWalletChain,
+  useDisconnect,
+  useReadContract,
+  useSwitchActiveWalletChain,
+} from "thirdweb/react";
+import { client, chain } from '@/lib/thirdweb';
+import { uranoToken, usdc } from '@/config/contracts';
+import { formatTokenAmount } from '@/utils/format';
 
 // Create the context
 const WalletContext = createContext();
@@ -27,11 +36,33 @@ export const WalletProvider = ({ children }) => {
 
   const displayAddress = formatAddress(walletAddress);
 
-  // Balance state (can be fetched separately if needed)
-  const [balance, setBalance] = useState({
-    urano: '0',
-    eth: '0'
+  const activeChain = useActiveWalletChain();
+  const switchChain = useSwitchActiveWalletChain();
+
+  const isCorrectNetwork = !activeAccount
+    ? true
+    : activeChain?.id === chain.id;
+
+  const { data: uranoBalance } = useReadContract({
+    contract: uranoToken,
+    method: "balanceOf",
+    params: [walletAddress],
+    enabled: isConnected,
   });
+
+  const { data: usdcBalance } = useReadContract({
+    contract: usdc,
+    method: "balanceOf",
+    params: [walletAddress],
+    enabled: isConnected,
+  });
+
+  const balance = {
+    urano: formatTokenAmount(uranoBalance ?? 0n, 18),
+    usdc: formatTokenAmount(usdcBalance ?? 0n, 6),
+    rawUrano: uranoBalance ?? 0n,
+    rawUsdc: usdcBalance ?? 0n,
+  };
 
   // KYC modal state
   const [kycModalShown, setKycModalShown] = useState(false);
@@ -94,7 +125,10 @@ export const WalletProvider = ({ children }) => {
     setKycShown,
     activeAccount,
     activeWallet,
-    client
+    client,
+    activeChain,
+    isCorrectNetwork,
+    switchToRequiredChain: () => switchChain(chain),
   };
 
   return (
