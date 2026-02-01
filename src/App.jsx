@@ -19,6 +19,9 @@ import Governance from '@/components/pages/Governance/Governance';
 import GovernanceDetail from '@/components/pages/Governance/GovernanceDetail';
 import CreateProposal from '@/components/pages/Governance/CreateProposal';
 import UStation from '@/components/pages/UStation/UStation';
+import CreateUShares from '@/components/pages/admin/ushares/create/CreateUShares';
+import ListUshares from '@/components/pages/admin/ushares/list/ListUshares';
+import UShareDetails from '@/components/pages/admin/ushares/details/UShareDetails';
 
 function App() {
   const { isDark } = useTheme();
@@ -343,6 +346,10 @@ function App() {
                   <Route path="/governance/create" element={<CreateProposal />} />
                   <Route path="/governance/:proposalId" element={<GovernanceDetail />} />
                   <Route path="/ustation" element={<UStation />} />
+                  {/* Admin Routes */}
+                  <Route path="/admin/ushares/create" element={<CreateUShares />} />
+                  <Route path="/admin/ushares/list" element={<ListUshares />} />
+                  <Route path="/admin/ushares/:id" element={<UShareDetails />} />
                 </Routes>
                 <Footer />
               </div>
